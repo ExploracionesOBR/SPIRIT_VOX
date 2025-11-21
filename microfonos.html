@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🎙️ MICRO OBR (V4 FINAL)</title>
+    <title>🎙️ MICRO OBR (ANTI-ERROR)</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
@@ -20,53 +20,23 @@
         .obr-logo { width: 60px; height: auto; margin-bottom: 5px; filter: drop-shadow(0 0 10px var(--accent)); display: block; margin: 0 auto; }
         h1 { margin: 0; color: var(--accent); font-size: 1.2rem; letter-spacing: 2px; }
 
-        /* PANEL DE PRUEBA DE MICRO */
-        .test-panel {
-            background: #1a1a1a; border: 1px solid #444; border-radius: 12px;
-            padding: 15px; width: 100%; max-width: 400px; margin-bottom: 20px;
-        }
-        .label-fix { font-size: 0.7rem; color: #aaa; display: block; margin-bottom: 5px; text-transform: uppercase; }
+        .test-panel { background: #1a1a1a; border: 1px solid #444; border-radius: 12px; padding: 15px; width: 100%; max-width: 400px; margin-bottom: 20px; text-align: center; }
+        .vu-container { width: 100%; height: 15px; background: #333; border-radius: 5px; overflow: hidden; border: 1px solid #555; margin: 10px 0; position: relative; }
+        .vu-bar { width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--success), var(--danger)); transition: width 0.05s ease-out; }
         
-        select {
-            width: 100%; padding: 10px; background: #000; border: 1px solid var(--accent); 
-            color: #fff; border-radius: 6px; font-size: 0.9rem; outline: none; margin-bottom: 10px;
-        }
+        .btn-refresh { background: #333; color: #fff; border: 1px solid #666; padding: 8px 15px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; margin-bottom: 5px; }
+        .btn-monitor { background: #220022; color: #ff88ff; border: 1px solid #ff88ff; padding: 8px 15px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; margin-left: 5px; }
+        .btn-monitor.active { background: #ff88ff; color: #000; }
 
-        /* VUMETRO DE PRUEBA */
-        .vu-container { 
-            width: 100%; height: 10px; background: #333; border-radius: 5px; overflow: hidden; border: 1px solid #555;
-            position: relative;
-        }
-        .vu-bar { 
-            width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--success), var(--danger)); 
-            transition: width 0.05s ease-out; 
-        }
-        .vu-text { font-size: 0.7rem; color: #888; text-align: right; margin-top: 3px; }
-
-        /* ESCANER Y BOTONES */
         #qr-reader { width: 100%; border-radius: 8px; overflow: hidden; display: none; background: #000; margin-bottom: 15px; }
-        
-        .btn-main {
-            width: 100%; padding: 18px; font-size: 1.1rem; font-weight: bold;
-            border: none; border-radius: 50px; cursor: pointer; transition: all 0.3s;
-            background: var(--accent); color: #000; box-shadow: 0 0 20px rgba(0, 210, 255, 0.2);
-            display: flex; align-items: center; justify-content: center; gap: 10px;
-        }
-        .btn-main.live { 
-            background: var(--danger); color: white; 
-            box-shadow: 0 0 30px rgba(255, 0, 0, 0.6); 
-            animation: pulse 1.5s infinite; 
-        }
-        
+        .btn-main { width: 100%; padding: 18px; font-size: 1.1rem; font-weight: bold; border: none; border-radius: 50px; cursor: pointer; transition: all 0.3s; background: var(--accent); color: #000; box-shadow: 0 0 20px rgba(0, 210, 255, 0.2); display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-main.live { background: var(--danger); color: white; box-shadow: 0 0 30px rgba(255, 0, 0, 0.6); animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
 
         #status { margin-top: 15px; font-size: 0.8rem; color: #666; font-family: monospace; text-align: center; word-break: break-word;}
-        
-        /* INPUT MANUAL */
         #manual-area { display: none; width: 100%; max-width: 400px; display: flex; gap: 5px; margin-top: 10px; }
         .input-code { flex: 1; padding: 10px; background: #222; border: 1px solid #555; color: #fff; border-radius: 5px; text-align: center; }
         .btn-go { width: 50px; background: #333; color: #fff; border: 1px solid #fff; border-radius: 5px; }
-
         audio { display: none; }
     </style>
 </head>
@@ -74,17 +44,17 @@
 
     <div class="logo-header">
         <img src="./obr-logo.png" alt="OBR Logo" class="obr-logo" onerror="this.style.display='none'">
-        <h1>MICROFONO EXT</h1>
+        <h1>MICROFONO OBR</h1>
     </div>
 
     <div class="test-panel">
-        <span class="label-fix">1. FUENTE DE AUDIO (GOLPEA PARA PROBAR):</span>
-        <select id="mic-select" onchange="restartAudioStream()"></select>
-        
-        <div class="vu-container">
-            <div id="vu-bar" class="vu-bar"></div>
+        <div style="font-size:0.7rem; color:#888; margin-bottom:5px;">NIVEL DE AUDIO (RAW)</div>
+        <div class="vu-container"><div id="vu-bar" class="vu-bar"></div></div>
+        <div style="display:flex; justify-content:center; gap:10px;">
+            <button class="btn-refresh" onclick="initAudioSystem()">🔄 RECARGAR</button>
+            <button id="btn-mon" class="btn-monitor" onclick="toggleMonitor()">🎧 MONITOR</button>
         </div>
-        <div class="vu-text">Si la barra no se mueve, no está seleccionado.</div>
+        <p style="font-size:0.65rem; color:#aaa; margin-top:5px;">Si conectas un micro, dale a Recargar.</p>
     </div>
 
     <div id="qr-reader"></div>
@@ -93,128 +63,85 @@
         <button id="btn-action" class="btn-main">
             <span>📡</span> <span id="btn-text">ESCANEAR ENLACE</span>
         </button>
-
         <div id="manual-area" style="display:none;">
-            <input type="text" id="manual-id" class="input-code" placeholder="O escribe ID aquí">
+            <input type="text" id="manual-id" class="input-code" placeholder="ID MANUAL">
             <button class="btn-go" onclick="manualConnect()">IR</button>
         </div>
     </div>
 
-    <div id="status">Cargando sistema...</div>
-
-    <audio id="fake-audio" loop playsinline src="data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjIwLjEwMAAAAAAAAAAAAAAA//oeGQAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq"></audio>
+    <div id="status">Sistema listo.</div>
+    <audio id="fake-audio" loop playsinline src="data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjIwLjEwMAAAAAAAAAAAAAAA//oeGQAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq"></audio>
 
 <script>
-    // --- SOLUCIÓN DE RED (TURN SERVERS) ---
-    // Esto permite que los datos crucen de 4G a WiFi
+    // CONFIGURACIÓN DE RED ROBUSTA (STUN GLOBAL)
     const peerConfig = {
+        debug: 2,
         config: {
             iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' },
-                // Servidores públicos gratuitos de OpenRelay Project (Vital para 4G)
-                { 
-                    urls: "turn:openrelay.metered.ca:80",
-                    username: "openrelayproject",
-                    credential: "openrelayproject"
-                },
-                { 
-                    urls: "turn:openrelay.metered.ca:443",
-                    username: "openrelayproject",
-                    credential: "openrelayproject"
-                },
-                { 
-                    urls: "turn:openrelay.metered.ca:443?transport=tcp",
-                    username: "openrelayproject",
-                    credential: "openrelayproject"
-                }
-            ]
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' },
+                { urls: 'stun:global.stun.twilio.com:3478' }
+            ],
+            sdpSemantics: 'unified-plan' // CRITICO PARA IPHONE
         }
     };
 
     const btn = document.getElementById('btn-action');
     const btnText = document.getElementById('btn-text');
     const status = document.getElementById('status');
-    const micSelect = document.getElementById('mic-select');
     const vuBar = document.getElementById('vu-bar');
     const qrContainer = document.getElementById('qr-reader');
     
-    let peer, activeStream, audioContext, analyser, microphone, jsNode;
+    let peer, activeStream, audioContext, analyser, microphone, jsNode, monitorNode;
     let currentCall, html5QrCode;
-    let isScanning = false, isConnected = false;
+    let isScanning = false, isConnected = false, isMonitoring = false;
+    let retryCount = 0; // Contador de reintentos
 
-    // --- INICIO ---
+    // --- INICIO PEER ---
     const myId = "obr-mic-" + Math.floor(Math.random()*10000);
-    
-    // Iniciar Peer con la configuración de red robusta
     peer = new Peer(myId, peerConfig);
     
-    peer.on('open', id => status.innerText = "Listo para conectar (Red Global)");
-    peer.on('error', err => { status.innerText = "Error Red: " + err.type; });
+    peer.on('open', id => console.log("ID Local:", id));
+    peer.on('error', err => { status.innerText = "Error Sistema: " + err.type; });
 
-    // Cargar lista de micros al iniciar
+    // INICIAR AUDIO RAW AUTOMATICAMENTE
     initAudioSystem();
 
     async function initAudioSystem() {
+        if(activeStream) activeStream.getTracks().forEach(t => t.stop());
+        if(audioContext) audioContext.close();
+
         try {
-            await navigator.mediaDevices.getUserMedia({ audio: true });
-            const devices = await navigator.mediaDevices.enumerateDevices();
-            const audioInputs = devices.filter(d => d.kind === 'audioinput');
-            
-            micSelect.innerHTML = '';
-            audioInputs.forEach(d => {
-                const opt = document.createElement('option');
-                opt.value = d.deviceId;
-                let name = d.label || "Microfono Generico";
-                if(name.toLowerCase().includes('headset') || name.toLowerCase().includes('wired') || name.toLowerCase().includes('external')) {
-                    name = "🎧 " + name.toUpperCase() + " (EXTERNO)";
+            // PEDIR AUDIO SIN PROCESAMIENTO (Para que entre el externo)
+            const constraints = {
+                audio: {
+                    echoCancellation: false, noiseSuppression: false, autoGainControl: false,
+                    googEchoCancellation: false, googAutoGainControl: false, googNoiseSuppression: false, googHighpassFilter: false
                 }
-                opt.text = name;
-                micSelect.appendChild(opt);
-            });
-
-            // Seleccionar el último (usualmente el externo)
-            if(audioInputs.length > 1) micSelect.selectedIndex = audioInputs.length - 1;
-            
-            startAudioStream();
-
+            };
+            activeStream = await navigator.mediaDevices.getUserMedia(constraints);
+            startVisualizer(activeStream);
+            status.innerText = "Microfono Activo (Modo RAW).";
         } catch (e) {
-            status.innerText = "Error permisos micro: " + e;
+            status.innerText = "Error Micro: " + e.message;
+            alert("Permiso de micrófono denegado o error de hardware.");
         }
     }
 
-    // ESTA FUNCIÓN SÓLO SE USA PARA EL VÚMETRO (PRUEBA)
-    async function startAudioStream() {
-        if(activeStream) activeStream.getTracks().forEach(t => t.stop());
-        
-        const deviceId = micSelect.value;
-        try {
-            activeStream = await navigator.mediaDevices.getUserMedia({
-                audio: {
-                    deviceId: { exact: deviceId },
-                    echoCancellation: false, 
-                    noiseSuppression: false,
-                    autoGainControl: false 
-                }
-            });
-            startVisualizer(activeStream);
-        } catch (e) { status.innerText = "Error al abrir micro: " + e; }
-    }
-
-    function restartAudioStream() {
-        startAudioStream(); // Reiniciar al cambiar selección
-    }
-
     function startVisualizer(stream) {
-        if(audioContext) audioContext.close();
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
         analyser = audioContext.createAnalyser();
         microphone = audioContext.createMediaStreamSource(stream);
         jsNode = audioContext.createScriptProcessor(2048, 1, 1);
-        analyser.smoothingTimeConstant = 0.3;
-        analyser.fftSize = 1024;
+        
+        monitorNode = audioContext.createGain(); monitorNode.gain.value = 0;
+
+        analyser.smoothingTimeConstant = 0.3; analyser.fftSize = 1024;
+
         microphone.connect(analyser);
-        analyser.connect(jsNode);
-        jsNode.connect(audioContext.destination);
+        microphone.connect(monitorNode); monitorNode.connect(audioContext.destination);
+        analyser.connect(jsNode); jsNode.connect(audioContext.destination);
+
         jsNode.onaudioprocess = () => {
             const array = new Uint8Array(analyser.frequencyBinCount);
             analyser.getByteFrequencyData(array);
@@ -224,8 +151,14 @@
         };
     }
 
-    // --- LOGICA DE CONEXION ---
-    
+    function toggleMonitor() {
+        isMonitoring = !isMonitoring;
+        const btnMon = document.getElementById('btn-mon');
+        if(isMonitoring) { monitorNode.gain.value = 1; btnMon.classList.add('active'); alert("🔊 MONITOR ON: Usa audífonos."); } 
+        else { monitorNode.gain.value = 0; btnMon.classList.remove('active'); }
+    }
+
+    // --- CONEXIÓN ---
     btn.addEventListener('click', () => {
         if(isConnected) disconnect();
         else if(isScanning) stopScanner();
@@ -233,17 +166,14 @@
     });
 
     function startScanner() {
-        isScanning = true;
-        qrContainer.style.display = 'block';
-        btnText.innerText = "CANCELAR";
+        isScanning = true; qrContainer.style.display = 'block'; btnText.innerText = "CANCELAR";
         html5QrCode = new Html5Qrcode("qr-reader");
         html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, 
             (decodedText) => { stopScanner(); connectToMixer(decodedText); },
             (err) => {}
         ).catch(err => {
-            alert("Cámara no disponible. Usa el ID manual.");
-            stopScanner();
-            document.getElementById('manual-area').style.display = 'flex';
+            alert("Cámara no disponible. Usa ID manual.");
+            stopScanner(); document.getElementById('manual-area').style.display = 'flex';
         });
     }
 
@@ -258,53 +188,64 @@
         if(id) connectToMixer(id);
     }
 
-    async function connectToMixer(mixerId) {
-        status.innerText = "Conectando... (Espera...)";
+    // === CORAZÓN DE LA CONEXIÓN CON REINTENTOS ===
+    function connectToMixer(mixerId) {
+        status.innerText = `Intentando conectar (Intento ${retryCount + 1})...`;
         status.style.color = "yellow";
 
-        // 1. DETENER AUDIO DE PRUEBA PARA LIBERAR EL RECURSO
-        if(activeStream) {
-            activeStream.getTracks().forEach(t => t.stop());
-            if(audioContext) audioContext.close();
-        }
+        // Asegurar audio en background
+        document.getElementById('fake-audio').play().catch(e=>{});
+        if ('wakeLock' in navigator) navigator.wakeLock.request('screen').catch(e=>{});
 
-        // 2. OBTENER STREAM NUEVO Y LIMPIO PARA LA TRANSMISIÓN
-        const deviceId = micSelect.value;
+        if(!activeStream) { alert("Sin audio. Recarga la página."); return; }
+        
+        // Cerrar llamada previa si existe
+        if(currentCall) currentCall.close();
+
         try {
-            const callStream = await navigator.mediaDevices.getUserMedia({
-                audio: {
-                    deviceId: { exact: deviceId },
-                    // IMPORTANTE: Desactivar todo procesamiento para forzar micro externo
-                    echoCancellation: false,
-                    noiseSuppression: false,
-                    autoGainControl: false,
-                    channelCount: 1
-                }
+            // Crear llamada
+            currentCall = peer.call(mixerId, activeStream);
+            
+            // Esperar error inmediato
+            currentCall.on('error', (err) => {
+                console.error("Error llamada:", err);
+                handleConnectionError(mixerId);
             });
 
-            // 3. HACKS PARA SEGUNDO PLANO
-            document.getElementById('fake-audio').play().catch(e=>{});
-            if ('wakeLock' in navigator) navigator.wakeLock.request('screen').catch(e=>{});
+            // PeerJS a veces no lanza 'error' sino que cierra inmediatamente si falla la negociación
+            currentCall.on('close', () => {
+                if(isConnected) disconnect(); // Cierre normal
+                else handleConnectionError(mixerId); // Cierre prematuro (fallo)
+            });
 
-            // 4. INICIAR LLAMADA CON CONFIGURACIÓN TURN
-            currentCall = peer.call(mixerId, callStream);
-            
-            // 5. UI
+            // Asumimos éxito temporalmente para cambiar UI
             setConnectedState(true);
-            status.innerText = "🔴 EN AIRE - CONECTANDO...";
-
-            currentCall.on('close', () => disconnect());
-            currentCall.on('error', (e) => { alert("Error llamada: "+e); disconnect(); });
             
-            // NOTA: En llamadas solo-audio, a veces 'stream' remoto no llega de vuelta, 
-            // así que asumimos éxito si no da error en 3 segundos.
-            setTimeout(() => {
-                if(isConnected) status.innerText = "🔴 CONECTADO A BASE (4G/WIFI)";
-            }, 3000);
+            // Verificación de seguridad: Si en 5 segundos no hay confirmación (opcional), podríamos reintentar
+            // Pero por ahora confiamos en el evento 'error' o 'close'
 
         } catch(e) {
-            alert("Error al tomar control del microfono: " + e);
-            disconnect();
+            handleConnectionError(mixerId);
+        }
+    }
+
+    function handleConnectionError(mixerId) {
+        setConnectedState(false);
+        
+        if(retryCount < 3) {
+            retryCount++;
+            status.innerText = `Negociación fallida. Reintentando (${retryCount}/3)...`;
+            status.style.color = "orange";
+            
+            // Esperar 1.5 segundos y reintentar
+            setTimeout(() => {
+                connectToMixer(mixerId);
+            }, 1500);
+        } else {
+            retryCount = 0;
+            status.innerText = "❌ ERROR FATAL: Red incompatible.";
+            status.style.color = "red";
+            alert("No se pudo establecer conexión. Posibles causas:\n1. Bloqueo de Firewall/Datos móviles.\n2. El Mezclador se cerró.\n\nIntenta recargar ambas páginas.");
         }
     }
 
@@ -312,26 +253,25 @@
         isConnected = connected;
         if(connected) {
             btn.classList.add('live');
-            btn.innerHTML = "🛑 DETENER TRANSMISIÓN";
+            btn.innerHTML = "🛑 DETENER";
+            status.innerText = "🔴 EN AIRE - CONECTADO";
             status.style.color = "#ff0000";
-            micSelect.disabled = true;
             document.getElementById('manual-area').style.display = 'none';
         } else {
             btn.classList.remove('live');
             btn.innerHTML = "<span>📡</span> <span id='btn-text'>ESCANEAR ENLACE</span>";
-            status.innerText = "Desconectado";
-            status.style.color = "#aaa";
-            micSelect.disabled = false;
-            // Reactivar vúmetro de prueba
-            startAudioStream();
+            if(retryCount === 0) {
+                status.innerText = "Listo para conectar";
+                status.style.color = "#aaa";
+            }
         }
     }
 
     function disconnect() {
+        retryCount = 0;
         if(currentCall) currentCall.close();
         setConnectedState(false);
     }
-
 </script>
 </body>
 </html>
