@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🎛️ MEZCLADOR DE AUDIO | EXPLORACIONES OBR</title>
+    <title>🎛️ MEZCLADOR PRO v3.0 (PERSISTENCIA)</title>
     
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -40,13 +40,10 @@
             padding: 6px 10px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; 
             border: 1px solid #444; background: #111; color: #666; text-transform: uppercase; white-space: nowrap;
         }
-        /* ESTADO CONECTADO (VERDE BRILLANTE) */
         .det-connected { 
-            background: rgba(0, 255, 65, 0.2); color: #00ff41; border-color: #00ff41; 
-            box-shadow: 0 0 15px rgba(0, 255, 65, 0.4); animation: pulseStatus 2s infinite; 
+            background: rgba(0, 255, 65, 0.1); color: #00ff41; border-color: #00ff41; 
+            box-shadow: 0 0 10px rgba(0, 255, 65, 0.3); animation: pulseStatus 2s infinite; 
         }
-        @keyframes pulseStatus { 50% { box-shadow: 0 0 25px rgba(0, 255, 65, 0.7); } }
-
         .btn-link {
             background: #222; border: 1px solid #fff; color: #fff; 
             padding: 6px 12px; cursor: pointer; border-radius: 4px; font-family: 'Orbitron';
@@ -56,14 +53,22 @@
 
         #console-container { 
             display: flex; gap: 15px; overflow-x: auto; flex-grow: 1; 
-            padding: 10px; align-items: stretch; scrollbar-width: thin; scrollbar-color: var(--accent) #111;
+            padding: 10px; align-items: stretch;
+            scrollbar-width: thin; scrollbar-color: var(--accent) #111;
         }
         
         .channel-strip { 
             background: var(--panel-bg); border: 1px solid #444; border-radius: 6px; padding: 10px; 
             display: flex; flex-direction: column; align-items: center; width: 100px; flex-shrink: 0; 
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5); position: relative; height: 100%; max-height: 100%;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5); position: relative;
+            height: 100%; max-height: 100%; transition: all 0.3s;
         }
+        /* ESTADO OFFLINE DEL CANAL */
+        .channel-strip.offline {
+            opacity: 0.6; border-color: #550000; filter: grayscale(0.8);
+        }
+        .channel-strip.offline .strip-title { color: #f00; }
+
         .strip-title { font-size: 0.7rem; font-weight: bold; margin-bottom: 5px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; text-align: center; }
         
         .fader-group { 
@@ -74,7 +79,10 @@
         .meter-container { width: 10px; height: 100%; background: #000; border: 1px solid #333; position: relative; border-radius: 2px; }
         .meter-fill { position: absolute; bottom: 0; left: 0; width: 100%; background: linear-gradient(to top, #00ff00, #ffff00, #ff0000); height: 0%; transition: height 0.05s; }
 
-        input[type=range][orient=vertical] { writing-mode: bt-lr; -webkit-appearance: slider-vertical; width: 40px; height: 100%; margin: 0; cursor: ns-resize; }
+        input[type=range][orient=vertical] { 
+            writing-mode: bt-lr; -webkit-appearance: slider-vertical; 
+            width: 40px; height: 100%; margin: 0; cursor: ns-resize; 
+        }
         
         .vol-input { 
             font-family: 'Orbitron'; font-size: 0.8rem; color: var(--accent); 
@@ -87,17 +95,35 @@
         .btn-mute { width: 100%; padding: 6px; margin-top: auto; background: #222; border: 1px solid #444; color: #888; font-size: 0.65rem; font-weight: bold; cursor: pointer; border-radius: 3px; transition: 0.2s; }
         .btn-mute:hover { color: #fff; border-color: #666; }
         .btn-mute.muted { background: #500; border-color: #f00; color: #f00; box-shadow: inset 0 0 5px #f00; }
+        
+        /* BOTON ELIMINAR CANAL */
+        .btn-del { 
+            position: absolute; top: -5px; right: -5px; background: #500; color: white; 
+            border: 1px solid red; border-radius: 50%; width: 20px; height: 20px; 
+            font-size: 0.7rem; cursor: pointer; display: flex; justify-content: center; align-items: center;
+            z-index: 10;
+        }
 
         .master-mic { border: 2px solid #ffae00; background: rgba(40, 30, 10, 0.9); order: 1; }
         .master-out { border: 2px solid var(--accent); background: rgba(0, 30, 40, 0.9); order: 100; margin-left: auto; }
 
         #overlay { position: fixed; inset: 0; background: #000; z-index: 99; display: flex; flex-direction: column; justify-content: center; align-items: center; background-image: url('./fondo_pantalla.jpg'); background-size: cover; }
         .overlay-content { background: rgba(0,0,0,0.9); padding: 30px; border-radius: 20px; border: 1px solid var(--accent); text-align: center; backdrop-filter: blur(10px); max-width: 90%; }
-        #btn-start { margin-top: 20px; padding: 15px 40px; font-size: 1.1rem; background: transparent; color: var(--accent); border: 2px solid var(--accent); border-radius: 50px; font-family: 'Orbitron'; cursor: pointer; transition: 0.3s; box-shadow: 0 0 15px rgba(0, 210, 255, 0.2); width: 100%; }
+        #btn-start { 
+            margin-top: 20px; padding: 15px 40px; font-size: 1.1rem; 
+            background: transparent; color: var(--accent); 
+            border: 2px solid var(--accent); border-radius: 50px; 
+            font-family: 'Orbitron'; cursor: pointer; transition: 0.3s;
+            box-shadow: 0 0 15px rgba(0, 210, 255, 0.2); width: 100%;
+        }
         #btn-start:hover { background: var(--accent); color: #000; box-shadow: 0 0 30px var(--accent); }
 
         #qr-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 200; justify-content: center; align-items: center; flex-direction: column; }
         #qrcode { background: white; padding: 15px; border-radius: 10px; border: 5px solid white; }
+        
+        @keyframes pulseStatus { 50% { box-shadow: 0 0 20px rgba(0, 255, 65, 0.6); } }
+
+        #ghost-audio-container { display: none; }
 
         @media (max-width: 768px) {
             body { padding: 5px; }
@@ -113,7 +139,7 @@
 
     <div id="overlay">
         <div class="overlay-content">
-            <img src="./obr-logo.png" style="width: 120px; margin-bottom: 15px; filter: drop-shadow(0 0 10px #00d2ff); display:block; margin-left:auto; margin-right:auto;">
+            <img src="./obr-logo.png" style="width: 120px; margin-bottom: 15px; filter: drop-shadow(0 0 10px #00d2ff); display:block; margin-left:auto; margin-right:auto;" onerror="this.style.display='none'">
             <h1 style="font-family: 'Orbitron'; color:white; font-size: 1.2rem;">SISTEMA DE AUDIO CENTRAL</h1>
             <button id="btn-start">INICIAR SERVIDOR</button>
         </div>
@@ -127,7 +153,7 @@
 
     <header>
         <div style="display:flex; align-items:center; width:100%; justify-content:center; flex-wrap:wrap;">
-            <img src="./obr-logo.png" class="logo-corner">
+            <img src="./obr-logo.png" class="logo-corner" onerror="this.style.display='none'">
             <div class="header-title">MEZCLADOR DE AUDIO<br><span style="font-size:0.7em; color:#fff;">EXPLORACIONES OBR</span></div>
         </div>
         <div class="status-group">
@@ -137,6 +163,7 @@
     </header>
 
     <div id="console-container">
+        <!-- 1. MICROFONO MASTER -->
         <div class="channel-strip master-mic" id="mic-master">
             <div class="strip-title" style="color:#ffae00">🎤 MASTER</div>
             <input type="number" class="vol-input" id="val-mic" value="100" onchange="syncVol('mic', this.value)">
@@ -147,6 +174,7 @@
             <button class="btn-mute" id="mute-mic" onclick="toggleMute('mic')">MUTE</button>
         </div>
 
+        <!-- 2. SALIDA MASTER -->
         <div class="channel-strip master-out">
             <div class="strip-title" style="color:var(--accent)">🔊 SALIDA</div>
             <input type="number" class="vol-input" id="val-out" value="100" onchange="syncVol('out', this.value)">
@@ -158,32 +186,35 @@
         </div>
     </div>
     
+    <div id="ghost-audio-container"></div>
     <audio id="silence-hack" loop src="data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjIwLjEwMAAAAAAAAAAAAAAA//oeGQAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq"></audio>
 
 <script>
     const FIXED_ID = "obr-mezclador-central";
+    
     let peer;
     let audioCtx;
     let masterOut, masterAnalyser;
     let localMicGain, localMicAnalyser;
-    let broadcastNode; // Nodo para enviar audio a los detectores
+    let broadcastNode; 
     
     let micMuted = false, outMuted = false;
     let micLastVol = 100, outLastVol = 100;
+    
+    // PERSISTENCIA DE CONEXIONES
+    let savedPeers = JSON.parse(localStorage.getItem('obr_peers') || "[]");
 
     document.getElementById('btn-start').addEventListener('click', async () => {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         await audioCtx.resume();
         
-        // Master Out (Lo que escuchas tu)
         masterOut = audioCtx.createGain();
         masterAnalyser = audioCtx.createAnalyser(); masterAnalyser.fftSize = 64;
         masterOut.connect(masterAnalyser);
         masterOut.connect(audioCtx.destination);
         
-        // Broadcast Node (Lo que envias a los detectores - Importante)
         broadcastNode = audioCtx.createMediaStreamDestination();
-        masterOut.connect(broadcastNode); // Enviamos la mezcla maestra a los detectores
+        masterOut.connect(broadcastNode); 
 
         animateMeter(masterAnalyser, 'meter-out');
 
@@ -192,11 +223,9 @@
             const source = audioCtx.createMediaStreamSource(stream);
             localMicGain = audioCtx.createGain();
             localMicAnalyser = audioCtx.createAnalyser(); localMicAnalyser.fftSize = 64;
-            
             source.connect(localMicGain);
             localMicGain.connect(localMicAnalyser);
             localMicGain.connect(masterOut); 
-            
             animateMeter(localMicAnalyser, 'meter-mic');
         } catch(e) {
             console.error("Mic Error", e);
@@ -206,6 +235,9 @@
         document.getElementById('silence-hack').play();
         document.getElementById('overlay').style.display = 'none';
         
+        // CARGAR PERSISTENCIA (Visualmente Offline)
+        loadSavedPeers();
+        
         initPeer();
     });
 
@@ -213,70 +245,93 @@
         peer = new Peer(FIXED_ID);
         
         peer.on('open', id => {
-            console.log("ID SERVIDOR:", id);
+            console.log("ID:", id);
             const qrContainer = document.getElementById("qrcode");
             qrContainer.innerHTML = ""; 
-            new QRCode(qrContainer, {
-                text: id,
-                width: 200,
-                height: 200,
-                colorDark : "#000000",
-                colorLight : "#ffffff",
-                correctLevel : QRCode.CorrectLevel.H
-            });
+            new QRCode(qrContainer, { text: id, width: 200, height: 200 });
         });
 
         peer.on('error', err => {
             if(err.type === 'unavailable-id') alert("⚠️ MEZCLADOR DUPLICADO");
         });
 
-        // CONEXIÓN DE DATOS
         peer.on('connection', conn => {
             conn.on('open', () => {
                 updateStatus(true);
-                // CRUCIAL: Enviar audio de vuelta al detector al conectar
-                // Esperamos un poco para asegurar estabilidad
                 setTimeout(() => {
-                    if(broadcastNode && broadcastNode.stream) {
-                        peer.call(conn.peer, broadcastNode.stream);
-                        console.log("Enviando audio a", conn.peer);
-                    }
+                    if(broadcastNode && broadcastNode.stream) peer.call(conn.peer, broadcastNode.stream);
                 }, 1000);
             });
             conn.on('close', () => updateStatus(false));
-            conn.on('error', () => updateStatus(false));
         });
 
-        // CONEXIÓN DE AUDIO (RECIBIR DEL DETECTOR)
+        // AUDIO ENTRANTE
         peer.on('call', call => {
-            // Respondemos con nuestro stream maestro para comunicación bidireccional
-            call.answer(broadcastNode.stream); 
-            
+            call.answer(broadcastNode.stream);
             call.on('stream', remoteStream => {
-                createChannelStrip(call.peer, remoteStream);
+                createChannelStrip(call.peer, remoteStream, true);
             });
-            call.on('close', () => removeChannelStrip(call.peer));
+            call.on('close', () => {
+                // NO borramos el strip, solo lo marcamos offline
+                markChannelOffline(call.peer);
+            });
         });
     }
 
-    function createChannelStrip(id, stream) {
-        if(document.getElementById('ch-' + id)) return;
+    // --- PERSISTENCIA ---
+    function loadSavedPeers() {
+        savedPeers.forEach(peerId => {
+            // Crear strip en modo offline (sin stream real aun)
+            createChannelStrip(peerId, null, false);
+        });
+    }
 
-        const source = audioCtx.createMediaStreamSource(stream);
-        const gainNode = audioCtx.createGain();
-        const analyserNode = audioCtx.createAnalyser(); analyserNode.fftSize = 64;
+    function savePeer(id) {
+        if(!savedPeers.includes(id)) {
+            savedPeers.push(id);
+            localStorage.setItem('obr_peers', JSON.stringify(savedPeers));
+        }
+    }
+    
+    function deletePeer(id) {
+        savedPeers = savedPeers.filter(p => p !== id);
+        localStorage.setItem('obr_peers', JSON.stringify(savedPeers));
+        const el = document.getElementById('ch-' + id);
+        if(el) el.remove();
+    }
+
+    function markChannelOffline(id) {
+        const el = document.getElementById('ch-' + id);
+        if(el) {
+            el.classList.add('offline');
+            el.querySelector('.strip-title').innerText = `⚠️ ${id.substring(0,5)}...`;
+        }
+    }
+
+    // --- CANALES ---
+    function createChannelStrip(id, stream, isLive) {
+        // Si ya existe, solo actualizar
+        let div = document.getElementById('ch-' + id);
         
-        source.connect(gainNode);
-        gainNode.connect(analyserNode);
-        gainNode.connect(masterOut);
+        if(div) {
+            if(isLive && stream) {
+                div.classList.remove('offline');
+                div.querySelector('.strip-title').innerText = `📡 ${id.substring(0,5)}...`;
+                // Reconectar audio
+                attachAudioToStrip(id, stream, div);
+            }
+            return;
+        }
 
-        const div = document.createElement('div');
-        div.className = 'channel-strip';
+        // Crear Nuevo
+        div = document.createElement('div');
+        div.className = 'channel-strip' + (isLive ? '' : ' offline');
         div.id = 'ch-' + id;
         div.style.order = "50"; 
         
         div.innerHTML = `
-            <div class="strip-title">📡 ${id.substring(0,5)}...</div>
+            <button class="btn-del" onclick="deletePeer('${id}')">×</button>
+            <div class="strip-title">${isLive ? '📡' : '⚠️'} ${id.substring(0,5)}...</div>
             <input type="number" class="vol-input" id="val-${id}" value="100">
             <div class="fader-group">
                 <div class="meter-container"><div class="meter-fill" id="met-${id}"></div></div>
@@ -289,7 +344,41 @@
         const masterStrip = document.querySelector('.master-out');
         container.insertBefore(div, masterStrip);
 
-        // Lógica Canal
+        // Guardar en persistencia
+        savePeer(id);
+
+        if(isLive && stream) {
+            attachAudioToStrip(id, stream, div);
+        }
+        
+        // Setup UI events (aunque sea offline, se configuran)
+        setupStripEvents(id, div);
+    }
+
+    function attachAudioToStrip(id, stream, div) {
+        // HACK AUDIO GHOST
+        const ghostAudio = document.createElement('audio');
+        ghostAudio.srcObject = stream;
+        ghostAudio.muted = true; 
+        ghostAudio.autoplay = true;
+        document.getElementById('ghost-audio-container').appendChild(ghostAudio);
+        ghostAudio.play().catch(e=>{});
+
+        const source = audioCtx.createMediaStreamSource(stream);
+        const gainNode = audioCtx.createGain();
+        const analyserNode = audioCtx.createAnalyser(); analyserNode.fftSize = 64;
+        
+        source.connect(gainNode);
+        gainNode.connect(analyserNode);
+        gainNode.connect(masterOut);
+        
+        // Guardar referencia en el DOM para reuso
+        div.audioNodes = { gain: gainNode, analyser: analyserNode };
+        
+        animateMeter(analyserNode, `met-${id}`);
+    }
+
+    function setupStripEvents(id, div) {
         const numberInput = div.querySelector(`#val-${id}`);
         const sliderInput = div.querySelector(`#slider-${id}`);
         const muteBtn = div.querySelector(`#mute-${id}`);
@@ -297,9 +386,9 @@
         let chLastVol = 100;
 
         const updateChGain = (val, fromSlider) => {
-            if(chMuted) return;
+            if(chMuted || !div.audioNodes) return;
             let numVal = parseInt(val);
-            gainNode.gain.value = numVal / 100;
+            div.audioNodes.gain.gain.value = numVal / 100;
             if(fromSlider) numberInput.value = numVal; else sliderInput.value = numVal;
             if(numVal > 100) numberInput.style.color = "#ffae00"; else numberInput.style.color = "#00d2ff";
             chLastVol = numVal;
@@ -311,39 +400,27 @@
         muteBtn.onclick = () => {
             chMuted = !chMuted;
             if(chMuted) {
-                gainNode.gain.value = 0;
+                if(div.audioNodes) div.audioNodes.gain.gain.value = 0;
                 muteBtn.classList.add('muted'); muteBtn.innerText = "MUTED";
                 sliderInput.disabled = true; numberInput.disabled = true;
             } else {
-                updateChGain(chLastVol, false); 
+                if(div.audioNodes) updateChGain(chLastVol, false); 
                 muteBtn.classList.remove('muted'); muteBtn.innerText = "MUTE";
                 sliderInput.disabled = false; numberInput.disabled = false;
             }
         };
-
-        animateMeter(analyserNode, `met-${id}`);
     }
 
-    function removeChannelStrip(id) {
-        const el = document.getElementById('ch-' + id);
-        if(el) el.remove();
-    }
-
+    // --- UTILIDADES ---
     function syncVol(type, val, fromSlider) {
         const numVal = parseInt(val);
         let inputEl, sliderEl, gainNode, isMuted;
         
         if(type === 'mic') {
-            inputEl = document.getElementById('val-mic');
-            sliderEl = document.getElementById('fader-mic');
-            gainNode = localMicGain;
-            isMuted = micMuted;
+            inputEl = document.getElementById('val-mic'); sliderEl = document.getElementById('fader-mic'); gainNode = localMicGain; isMuted = micMuted;
             if(!isMuted) micLastVol = numVal;
         } else if(type === 'out') {
-            inputEl = document.getElementById('val-out');
-            sliderEl = document.getElementById('fader-out');
-            gainNode = masterOut;
-            isMuted = outMuted;
+            inputEl = document.getElementById('val-out'); sliderEl = document.getElementById('fader-out'); gainNode = masterOut; isMuted = outMuted;
             if(!isMuted) outLastVol = numVal;
         }
 
@@ -357,50 +434,28 @@
     function toggleMute(type) {
         if(type === 'mic' && localMicGain) {
             micMuted = !micMuted;
-            const btn = document.getElementById('mute-mic');
-            const inp = document.getElementById('val-mic');
-            const sli = document.getElementById('fader-mic');
-            if(micMuted) {
-                localMicGain.gain.value = 0;
-                btn.classList.add('muted'); btn.innerText = "MUTED";
-                inp.disabled = true; sli.disabled = true;
-            } else {
-                localMicGain.gain.value = micLastVol / 100;
-                btn.classList.remove('muted'); btn.innerText = "MUTE";
-                inp.disabled = false; sli.disabled = false;
-            }
+            const btn = document.getElementById('mute-mic'); const inp = document.getElementById('val-mic'); const sli = document.getElementById('fader-mic');
+            if(micMuted) { localMicGain.gain.value = 0; btn.classList.add('muted'); btn.innerText = "MUTED"; inp.disabled = true; sli.disabled = true; } 
+            else { localMicGain.gain.value = micLastVol / 100; btn.classList.remove('muted'); btn.innerText = "MUTE"; inp.disabled = false; sli.disabled = false; }
         }
         if(type === 'out' && masterOut) {
             outMuted = !outMuted;
-            const btn = document.getElementById('mute-out');
-            const inp = document.getElementById('val-out');
-            const sli = document.getElementById('fader-out');
-            if(outMuted) {
-                masterOut.gain.value = 0;
-                btn.classList.add('muted'); btn.innerText = "MUTED";
-                inp.disabled = true; sli.disabled = true;
-            } else {
-                masterOut.gain.value = outLastVol / 100;
-                btn.classList.remove('muted'); btn.innerText = "MUTE";
-                inp.disabled = false; sli.disabled = false;
-            }
+            const btn = document.getElementById('mute-out'); const inp = document.getElementById('val-out'); const sli = document.getElementById('fader-out');
+            if(outMuted) { masterOut.gain.value = 0; btn.classList.add('muted'); btn.innerText = "MUTED"; inp.disabled = true; sli.disabled = true; } 
+            else { masterOut.gain.value = outLastVol / 100; btn.classList.remove('muted'); btn.innerText = "MUTE"; inp.disabled = false; sli.disabled = false; }
         }
     }
 
     function showQR() {
+        const qrDiv = document.getElementById("qrcode"); qrDiv.innerHTML = ""; 
+        new QRCode(qrDiv, { text: FIXED_ID, width: 200, height: 200, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H });
         document.getElementById('qr-modal').style.display = 'flex';
     }
 
     function updateStatus(connected) {
         const el = document.getElementById('det-status');
-        if(connected) {
-            el.innerText = "DETECTOR: ONLINE";
-            el.className = "status-badge det-connected";
-        } else {
-            el.innerText = "DETECTOR: OFF";
-            el.className = "status-badge";
-            el.style.borderColor = "#555"; el.style.color="#555";
-        }
+        if(connected) { el.innerText = "DETECTOR: ONLINE"; el.className = "status-badge det-connected"; } 
+        else { el.innerText = "DETECTOR: OFF"; el.className = "status-badge"; el.style.borderColor = "#555"; el.style.color="#555"; }
     }
 
     const dArray = new Uint8Array(64);
@@ -409,11 +464,13 @@
             const el = document.getElementById(elemId);
             if(!el) return;
             requestAnimationFrame(loop);
-            analyser.getByteFrequencyData(dArray);
-            let sum = 0; for(let i=0; i<dArray.length; i++) sum+=dArray[i];
-            let avg = sum/dArray.length; 
-            let pct = Math.min(100, (avg / 60) * 100); 
-            el.style.height = pct + "%";
+            if(analyser) {
+                analyser.getByteFrequencyData(dArray);
+                let sum = 0; for(let i=0; i<dArray.length; i++) sum+=dArray[i];
+                let avg = sum/dArray.length; 
+                let pct = Math.min(100, (avg / 60) * 100); 
+                el.style.height = pct + "%";
+            }
         }
         loop();
     }
