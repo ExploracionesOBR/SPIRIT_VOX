@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🎛️ MEZCLADOR EMISOR</title>
+    <title>🎛️ MEZCLADOR INTELIGENTE</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
         body { background-color: #050505; color: #e0e0e0; font-family: system-ui, sans-serif; margin: 0; padding: 20px; }
@@ -12,51 +12,46 @@
         .panel { background: #111; border: 1px solid #333; padding: 15px; border-radius: 8px; margin-top: 15px; }
         .highlight { border-color: #00d2ff; box-shadow: 0 0 10px rgba(0, 210, 255, 0.1); }
         
-        label { font-size: 0.8rem; color: #aaa; display: block; margin-bottom: 5px; }
         input[type=range] { width: 100%; accent-color: #00d2ff; cursor: pointer; height: 30px; }
         
-        .btn { width: 100%; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 5px; }
-        .btn-monitor { background: #333; color: #fff; border: 1px solid #555; }
-        .btn-monitor.active { background: #00ff41; color: #000; border-color: #00ff41; }
+        /* MONITOR AUTOMATICO */
+        .monitor-box { 
+            padding: 15px; border-radius: 6px; margin-top: 10px; font-weight: bold; text-align: center; transition: 0.3s; 
+            border: 1px solid #333;
+        }
+        .monitor-on { background: #00ff41; color: #000; box-shadow: 0 0 15px #00ff41; }
+        .monitor-off { background: #333; color: #666; }
 
-        .channel-list { margin-top: 20px; }
-        .channel { display: flex; align-items: center; justify-content: space-between; background: #1a1a1a; padding: 10px; margin-bottom: 5px; border-left: 3px solid #00d2ff; border-radius: 4px; }
+        .channel { display: flex; align-items: center; justify-content: space-between; background: #1a1a1a; padding: 10px; margin-bottom: 5px; border-left: 3px solid #00d2ff; border-radius: 4px; margin-top: 10px; }
         
         #overlay { position: fixed; inset: 0; background: #000; z-index: 99; display: flex; justify-content: center; align-items: center; }
         #btn-start { padding: 20px 40px; font-size: 1.5rem; background: #00d2ff; border: none; border-radius: 50px; font-weight: bold; }
-        
-        .status-dot { width: 10px; height: 10px; background: #333; border-radius: 50%; display: inline-block; margin-right: 5px; }
-        .connected { background: #00ff41; box-shadow: 0 0 5px #00ff41; }
     </style>
 </head>
 <body>
 
-    <div id="overlay"><button id="btn-start">INICIAR SISTEMA ⚡</button></div>
+    <div id="overlay"><button id="btn-start">INICIAR MEZCLADOR ⚡</button></div>
 
-    <h1>🎛️ MEZCLADOR (SOURCE)</h1>
+    <h1>🎛️ BASE CENTRAL</h1>
     <div style="color: #666; font-size: 0.8rem;">ID: obr-mezclador-central</div>
 
+    <div class="panel">
+        <strong>🎧 ESTADO DEL MONITOR (LOCAL)</strong>
+        <div id="monitor-status" class="monitor-box monitor-off">ESPERANDO ORDEN...</div>
+        <p style="font-size: 0.7rem; color: #888; text-align: center;">
+            Si DETECTOR está en ROJO = Escuchas aquí.<br>
+            Si DETECTOR está en VERDE = Se silencia aquí.
+        </p>
+    </div>
+
     <div class="panel highlight">
-        <div style="display:flex; justify-content:space-between;">
-            <strong style="color:#00d2ff;">📡 SEÑAL HACIA DETECTOR</strong>
-            <div><span id="conn-dot" class="status-dot"></span><span id="conn-text" style="font-size:0.8rem;">Esperando Detector...</span></div>
-        </div>
-        <hr style="border-color:#333; margin: 10px 0;">
-        
-        <label>VOLUMEN DE ENVÍO (GANANCIA)</label>
+        <label>VOLUMEN DE ENVÍO A DETECTOR</label>
         <input type="range" id="master-vol" min="0" max="3" step="0.1" value="1.5">
     </div>
 
-    <div class="panel">
-        <strong>🎧 MONITOR LOCAL (PRUEBAS)</strong>
-        <p style="font-size: 0.8rem; color: #888; margin: 5px 0;">Activa esto para probar micros si el Detector está en OFF.</p>
-        <button id="btn-monitor" class="btn btn-monitor">ESCUCHAR AQUÍ: OFF</button>
-    </div>
-
-    <div class="channel-list" id="channels">
+    <div id="channels">
         <div class="channel" style="border-left-color: #fff;">
             <span>🎙️ MI MICRÓFONO (LOCAL)</span>
-            <span style="font-size:0.8rem; color:#0f0;">ACTIVO</span>
         </div>
     </div>
 
@@ -70,61 +65,65 @@
         audioCtx = new AudioContext();
 
         // 1. RUTAS DE AUDIO
-        masterGain = audioCtx.createGain(); // Controla volumen hacia Detector
+        masterGain = audioCtx.createGain(); // Hacia Internet
         masterGain.gain.value = 1.5;
 
-        broadcastNode = audioCtx.createMediaStreamDestination(); // El cable a internet
-        monitorNode = audioCtx.createGain(); // El cable a tus bocinas
-        monitorNode.gain.value = 0; // Empezar silenciado para no viciar
+        broadcastNode = audioCtx.createMediaStreamDestination(); 
+        
+        monitorNode = audioCtx.createGain(); // Hacia Bocinas PC
+        monitorNode.gain.value = 1; // Empieza encendido (RX OFF)
+        updateMonitorUI(true);
+        
         monitorNode.connect(audioCtx.destination);
-
-        // Conexión Maestra
         masterGain.connect(broadcastNode);
 
         // 2. PEERJS
         peer = new Peer(MY_ID);
         
-        peer.on('open', () => console.log("Mezclador Abierto"));
+        peer.on('open', () => console.log("Mezclador Listo"));
         
-        // A) Alguien nos llama (Un Micrófono)
+        // A) AUDIO ENTRANTE (Micrófonos)
         peer.on('call', call => {
             call.answer();
-            call.on('stream', stream => {
-                // Si es el Detector pidiendo audio, NO lo mezclamos (loop infinito)
-                // Pero aquí asumimos que el Detector solo recibe.
-                addMicrophone(call.peer, stream);
+            call.on('stream', stream => addMicrophone(call.peer, stream));
+        });
+
+        // B) DATOS ENTRANTES (Comandos del Detector)
+        peer.on('connection', conn => {
+            // Enviar audio apenas se conecte el detector
+            setTimeout(() => {
+                peer.call(conn.peer, broadcastNode.stream);
+            }, 1000);
+
+            // Escuchar órdenes "RX_ON" o "RX_OFF"
+            conn.on('data', data => {
+                console.log("Comando recibido:", data);
+                if(data.cmd === 'RX_ON') {
+                    // Detector en VERDE -> Yo me callo
+                    monitorNode.gain.value = 0;
+                    updateMonitorUI(false);
+                } 
+                else if (data.cmd === 'RX_OFF') {
+                    // Detector en ROJO -> Yo escucho
+                    monitorNode.gain.value = 1;
+                    updateMonitorUI(true);
+                }
             });
         });
 
-        // B) Detector se conecta para recibir audio
-        peer.on('connection', conn => {
-            document.getElementById('conn-dot').classList.add('connected');
-            document.getElementById('conn-text').innerText = "DETECTOR CONECTADO";
-            // Cuando el detector se conecta por datos, le llamamos nosotros con el audio
-            setTimeout(() => {
-                peer.call(conn.peer, broadcastNode.stream);
-                console.log("Enviando audio al detector...");
-            }, 1000);
-        });
-
-        // 3. ACTIVAR MI MICROFONO
+        // 3. MI MICROFONO
         try {
             const stream = await navigator.mediaDevices.getUserMedia({audio: true});
             addMicrophone("LOCAL", stream);
-        } catch(e) { console.log("Sin mic local"); }
+        } catch(e) { console.log("Sin mic"); }
 
         document.getElementById('overlay').style.display = 'none';
     });
 
-    // FUNCION: Mezclar Audio
     function addMicrophone(id, stream) {
         const source = audioCtx.createMediaStreamSource(stream);
-        
-        // Enviar a la Salida (Detector)
-        source.connect(masterGain);
-        
-        // Enviar al Monitor (Local)
-        source.connect(monitorNode);
+        source.connect(masterGain); // Al Detector
+        source.connect(monitorNode); // A mis bocinas (controlado por Detector)
 
         if(id !== "LOCAL") {
             const div = document.createElement('div');
@@ -134,26 +133,20 @@
         }
     }
 
-    // CONTROL: Volumen Salida
     document.getElementById('master-vol').addEventListener('input', e => {
         masterGain.gain.value = e.target.value;
     });
 
-    // CONTROL: Monitor Local
-    const btnMon = document.getElementById('btn-monitor');
-    let monitorOn = false;
-    btnMon.addEventListener('click', () => {
-        monitorOn = !monitorOn;
-        if(monitorOn) {
-            monitorNode.gain.value = 1;
-            btnMon.classList.add('active');
-            btnMon.innerText = "ESCUCHAR AQUÍ: ON";
+    function updateMonitorUI(isOn) {
+        const el = document.getElementById('monitor-status');
+        if(isOn) {
+            el.className = "monitor-box monitor-on";
+            el.innerText = "🔊 ESCUCHANDO EN MEZCLADOR";
         } else {
-            monitorNode.gain.value = 0;
-            btnMon.classList.remove('active');
-            btnMon.innerText = "ESCUCHAR AQUÍ: OFF";
+            el.className = "monitor-box monitor-off";
+            el.innerText = "🔇 SILENCIADO (Detector activo)";
         }
-    });
+    }
 </script>
 </body>
 </html>
