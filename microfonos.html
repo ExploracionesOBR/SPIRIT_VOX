@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🎙️ MICRO OBR (FIX)</title>
+    <title>🎙️ MICRO OBR (SELECTOR)</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
@@ -26,10 +26,16 @@
             backdrop-filter: blur(10px); box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
-        /* ÁREA DE CÁMARA */
+        /* SELECTOR DE MICROFONO */
+        .mic-selector-container { margin-bottom: 15px; text-align: left; }
+        .mic-label { font-size: 0.8rem; color: #aaa; margin-bottom: 5px; display: block; }
+        #mic-select {
+            width: 100%; padding: 10px; background: #222; border: 1px solid var(--accent); 
+            color: white; border-radius: 8px; font-size: 1rem; outline: none;
+        }
+
         #qr-reader { width: 100%; margin-bottom: 15px; border-radius: 8px; overflow: hidden; display: none; background: #000; }
         
-        /* BOTÓN PRINCIPAL */
         #btn-action {
             width: 100%; padding: 15px; font-size: 1.1rem; font-weight: bold;
             border: none; border-radius: 10px; cursor: pointer; transition: all 0.3s;
@@ -39,7 +45,6 @@
         #btn-action.live { background: var(--danger); color: white; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 0, 0, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); } }
 
-        /* INPUT MANUAL (PLAN B) */
         #manual-input-area { display: none; margin-top: 15px; border-top: 1px solid #333; padding-top: 15px; }
         .input-id { width: 70%; padding: 10px; background: #222; border: 1px solid #555; color: white; border-radius: 5px; text-align: center; text-transform: uppercase; }
         .btn-go { width: 25%; padding: 10px; background: #333; border: 1px solid #fff; color: white; border-radius: 5px; cursor: pointer; }
@@ -56,6 +61,14 @@
     </div>
 
     <div class="main-card">
+        
+        <div class="mic-selector-container">
+            <label class="mic-label">🎤 FUENTE DE AUDIO:</label>
+            <select id="mic-select">
+                <option value="">Cargando micrófonos...</option>
+            </select>
+        </div>
+
         <div id="qr-reader"></div>
 
         <button id="btn-action">
@@ -63,15 +76,15 @@
         </button>
 
         <div id="manual-input-area">
-            <p style="color:#ff4444; font-size:0.8rem; margin-bottom:5px;">⚠️ CÁMARA BLOQUEADA - INGRESO MANUAL</p>
+            <p style="color:#ff4444; font-size:0.8rem; margin-bottom:5px;">⚠️ INGRESO MANUAL</p>
             <input type="text" id="input-id" class="input-id" placeholder="ID DEL MEZCLADOR">
             <button class="btn-go" onclick="manualConnect()">IR</button>
         </div>
         
-        <div id="status">Esperando acción...</div>
+        <div id="status">Selecciona tu micrófono y escanea</div>
     </div>
 
-    <audio id="fake-audio" loop playsinline src="data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjIwLjEwMAAAAAAAAAAAAAAA//oeGQAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq"></audio>
+    <audio id="fake-audio" loop playsinline src="data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjIwLjEwMAAAAAAAAAAAAAAA//oeGQAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq"></audio>
 
 <script>
     const btn = document.getElementById('btn-action');
@@ -80,6 +93,7 @@
     const qrContainer = document.getElementById('qr-reader');
     const fakeAudio = document.getElementById('fake-audio');
     const manualArea = document.getElementById('manual-input-area');
+    const micSelect = document.getElementById('mic-select');
     
     let peer = null;
     let currentCall = null;
@@ -87,12 +101,45 @@
     let isScanning = false;
     let isConnected = false;
 
-    // 1. INICIALIZAR PEER
+    // 1. INICIALIZAR Y CARGAR MICRÓFONOS
     const myMicId = "obr-mic-" + Math.floor(Math.random() * 9999);
     peer = new Peer(myMicId);
     
     peer.on('open', id => { console.log("Mi ID:", id); });
     peer.on('error', err => { status.innerText = "Error Peer: " + err.type; });
+
+    // Cargar lista de dispositivos al iniciar
+    getAudioInputs();
+
+    async function getAudioInputs() {
+        try {
+            // Pedir permiso primero para poder ver las etiquetas (nombres)
+            await navigator.mediaDevices.getUserMedia({ audio: true });
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            
+            const audioDevices = devices.filter(device => device.kind === 'audioinput');
+            micSelect.innerHTML = '';
+            
+            if (audioDevices.length === 0) {
+                micSelect.innerHTML = '<option>No se detectaron micrófonos</option>';
+                return;
+            }
+
+            audioDevices.forEach(device => {
+                const option = document.createElement('option');
+                option.value = device.deviceId;
+                option.text = device.label || `Micrófono ${micSelect.length + 1}`;
+                micSelect.appendChild(option);
+            });
+
+            // Intentar seleccionar el último conectado (suele ser el externo)
+            // Opcional: micSelect.selectedIndex = micSelect.options.length - 1;
+
+        } catch (err) {
+            console.error(err);
+            micSelect.innerHTML = '<option>Error: Permiso denegado</option>';
+        }
+    }
 
     // 2. BOTÓN PRINCIPAL
     btn.addEventListener('click', () => {
@@ -100,33 +147,25 @@
         if (!isScanning) { startQRScanner(); } else { stopQRScanner(); }
     });
 
-    // 3. LÓGICA DE ESCÁNER ROBUSTA
     function startQRScanner() {
-        // Verificar soporte de cámara primero
         if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
             alert("Tu navegador no soporta acceso a cámara o no es seguro (HTTPS).");
             showManualInput();
             return;
         }
-
         isScanning = true;
         qrContainer.style.display = "block";
         btnText.innerText = "CANCELAR";
         status.innerText = "Iniciando cámara...";
 
         html5QrCode = new Html5Qrcode("qr-reader");
-        
-        // Intentar cámara trasera
         const config = { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 };
         
         html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure)
         .catch(err => {
-            // SI FALLA LA CÁMARA:
-            console.error("Error cámara:", err);
             status.innerText = "⛔ No se pudo abrir la cámara.";
             stopQRScanner();
-            showManualInput(); // Mostrar opción manual
-            alert("Error: No se puede acceder a la cámara. Posibles causas:\n1. No estás en HTTPS.\n2. Permiso denegado.\n\nUsa el ingreso manual abajo.");
+            showManualInput();
         });
     }
 
@@ -144,58 +183,53 @@
         }
     }
 
-    function showManualInput() {
-        manualArea.style.display = "block";
-    }
-
-    function onScanSuccess(decodedText) {
-        stopQRScanner();
-        connectToMixer(decodedText);
-    }
-
-    function onScanFailure(error) {
-        // No hacer nada, es ruido normal mientras busca
-    }
-
-    // 4. CONEXIÓN MANUAL (Plan B)
+    function showManualInput() { manualArea.style.display = "block"; }
     function manualConnect() {
         const id = document.getElementById('input-id').value.trim();
         if(id.length > 0) connectToMixer(id);
-        else alert("Escribe el ID del mezclador");
     }
+    function onScanSuccess(decodedText) { stopQRScanner(); connectToMixer(decodedText); }
+    function onScanFailure(error) {}
 
-    // 5. TRANSMISIÓN DE AUDIO
+    // 3. CONEXIÓN CON DISPOSITIVO SELECCIONADO
     async function connectToMixer(mixerId) {
-        status.innerText = "Conectando a: " + mixerId;
+        const selectedMicId = micSelect.value;
+        status.innerText = "Conectando...";
         
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ 
-                audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, 
-                video: false 
-            });
+            // AQUÍ ESTÁ LA MAGIA: USAR EL ID SELECCIONADO
+            const constraints = {
+                audio: {
+                    deviceId: selectedMicId ? { exact: selectedMicId } : undefined,
+                    echoCancellation: false, // Desactivar para mejor calidad de ambiente
+                    noiseSuppression: false,
+                    autoGainControl: false
+                },
+                video: false
+            };
 
-            // Hacks para mantener vivo
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+
             fakeAudio.play().catch(e => {});
             if ('wakeLock' in navigator) navigator.wakeLock.request('screen').catch(e=>{});
 
             const call = peer.call(mixerId, stream);
             currentCall = call;
 
-            // UI LIVE
             isConnected = true;
             btn.classList.add('live');
             btn.innerHTML = "🛑 DETENER (EN VIVO)";
-            status.innerText = "TRANSMITIENDO A BASE";
+            status.innerText = "TRANSMITIENDO CON: " + (micSelect.options[micSelect.selectedIndex]?.text || "Micrófono");
             status.style.color = "#00ff00";
-            manualArea.style.display = "none"; // Ocultar manual si conecta
+            manualArea.style.display = "none";
+            micSelect.disabled = true; // Bloquear selector mientras transmite
 
             call.on('close', stopTransmission);
             call.on('error', stopTransmission);
 
         } catch (err) {
             console.error(err);
-            status.innerText = "Error Micrófono: " + err.message;
-            alert("No se pudo acceder al micrófono. Revisa permisos.");
+            alert("Error al acceder al micrófono seleccionado: " + err.message);
             stopTransmission();
         }
     }
@@ -210,6 +244,7 @@
         btn.innerHTML = "<span>📷</span> <span id='btn-text'>ESCANEAR QR</span>";
         status.innerText = "Desconectado";
         status.style.color = "#aaa";
+        micSelect.disabled = false; // Desbloquear selector
     }
 </script>
 </body>
