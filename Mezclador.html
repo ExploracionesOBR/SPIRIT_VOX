@@ -3,315 +3,157 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🎛️ MIXER V4</title>
+    <title>🎛️ MEZCLADOR EMISOR</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
-        :root {
-            --bg: #050505;
-            --card: #1a1a1a;
-            --accent: #00d2ff;
-            --text: #e0e0e0;
-        }
-
-        body { 
-            background-color: var(--bg); 
-            color: var(--text); 
-            font-family: system-ui, sans-serif; 
-            margin: 0; 
-            padding-bottom: 50px;
-            /* Evitar scroll horizontal */
-            overflow-x: hidden; 
-        }
-
-        /* --- HEADER --- */
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px;
-            background: #111;
-            border-bottom: 1px solid #333;
-        }
-        h1 { margin: 0; font-size: 1.1rem; color: var(--accent); letter-spacing: 1px; }
-        .btn-gear { background: none; border: none; font-size: 1.5rem; cursor: pointer; }
-
-        /* --- MODAL AJUSTES --- */
-        #settings-modal {
-            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100; padding: 20px;
-        }
-        #settings-modal.active { display: block; }
-        .close-btn { font-size: 2rem; color: #fff; float: right; cursor: pointer; background: none; border: none;}
+        body { background-color: #050505; color: #e0e0e0; font-family: system-ui, sans-serif; margin: 0; padding: 20px; }
+        h1 { color: #00d2ff; margin: 0; font-size: 1.5rem; }
         
-        .config-box { background: #222; padding: 15px; border-radius: 8px; margin-top: 40px; border: 1px solid #444; }
-        .id-text { font-size: 1.2rem; color: var(--accent); font-weight: bold; word-break: break-all; margin: 10px 0; }
-        input { width: 100%; padding: 10px; background: #000; border: 1px solid #555; color: white; box-sizing: border-box; }
-        .btn-link { width: 100%; padding: 12px; background: var(--accent); border: none; font-weight: bold; margin-top: 10px; border-radius: 5px; }
-
-        /* --- CANAL DE AUDIO (DISEÑO VERTICAL) --- */
-        #channels-container { padding: 10px; }
-
-        .channel-strip {
-            background: var(--card);
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
-            border-left: 4px solid #444;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-            position: relative;
-        }
-        .channel-strip.live { border-left-color: var(--accent); }
-
-        .info-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.9rem; font-weight: bold; }
+        .panel { background: #111; border: 1px solid #333; padding: 15px; border-radius: 8px; margin-top: 15px; }
+        .highlight { border-color: #00d2ff; box-shadow: 0 0 10px rgba(0, 210, 255, 0.1); }
         
-        /* CANVAS VISUALIZADOR */
-        .viz-container {
-            width: 100%;
-            height: 80px;
-            background: #000;
-            border: 1px solid #333;
-            border-radius: 4px;
-            margin-bottom: 15px;
-            position: relative;
-        }
-        canvas { display: block; width: 100%; height: 100%; }
+        label { font-size: 0.8rem; color: #aaa; display: block; margin-bottom: 5px; }
+        input[type=range] { width: 100%; accent-color: #00d2ff; cursor: pointer; height: 30px; }
         
-        /* Grid de fondo para el canvas (Estético) */
-        .viz-grid {
-            position: absolute; inset: 0; pointer-events: none; opacity: 0.2;
-            background-image: linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px);
-            background-size: 10px 10px;
-        }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        .btn-monitor { background: #333; color: #fff; border: 1px solid #555; }
+        .btn-monitor.active { background: #00ff41; color: #000; border-color: #00ff41; }
 
-        /* CONTROLES */
-        .controls { display: flex; align-items: center; gap: 10px; }
+        .channel-list { margin-top: 20px; }
+        .channel { display: flex; align-items: center; justify-content: space-between; background: #1a1a1a; padding: 10px; margin-bottom: 5px; border-left: 3px solid #00d2ff; border-radius: 4px; }
         
-        .slider-container { flex-grow: 1; }
-        input[type=range] { width: 100%; height: 30px; accent-color: var(--accent); cursor: pointer; }
+        #overlay { position: fixed; inset: 0; background: #000; z-index: 99; display: flex; justify-content: center; align-items: center; }
+        #btn-start { padding: 20px 40px; font-size: 1.5rem; background: #00d2ff; border: none; border-radius: 50px; font-weight: bold; }
         
-        .btn-mute {
-            background: #333; color: #fff; border: 1px solid #555;
-            width: 50px; height: 50px; border-radius: 50%; font-size: 0.7rem; font-weight: bold;
-        }
-        .btn-mute.muted { background: #ff3333; border-color: red; }
-
-        /* Botón Inicio Grande (Necesario para AudioContext en móviles) */
-        #overlay-start {
-            position: fixed; inset: 0; background: #000; z-index: 200;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
-        #btn-init {
-            padding: 20px 40px; font-size: 1.2rem; background: var(--accent); border: none; border-radius: 50px; font-weight: bold;
-            box-shadow: 0 0 20px rgba(0, 210, 255, 0.6); animation: pulse 2s infinite;
-        }
-        @keyframes pulse { 50% { transform: scale(1.05); } }
-
-        /* Advertencia de Audio Bloqueado */
-        .audio-warning {
-            color: #ff3333; font-size: 0.8rem; text-align: center; margin-top: 5px; display: none;
-        }
+        .status-dot { width: 10px; height: 10px; background: #333; border-radius: 50%; display: inline-block; margin-right: 5px; }
+        .connected { background: #00ff41; box-shadow: 0 0 5px #00ff41; }
     </style>
 </head>
 <body>
 
-    <div id="overlay-start">
-        <button id="btn-init">ACTIVAR CONSOLA 🎛️</button>
-        <p style="color: #666; margin-top: 20px;">Tocar para iniciar audio</p>
-    </div>
+    <div id="overlay"><button id="btn-start">INICIAR SISTEMA ⚡</button></div>
 
-    <header>
-        <h1>🎛️ MIXER PRO V4</h1>
-        <button class="btn-gear" onclick="toggleSettings()">⚙️</button>
-    </header>
+    <h1>🎛️ MEZCLADOR (SOURCE)</h1>
+    <div style="color: #666; font-size: 0.8rem;">ID: obr-mezclador-central</div>
 
-    <div id="settings-modal">
-        <button class="close-btn" onclick="toggleSettings()">✕</button>
-        <div class="config-box">
-            <p style="color:#888; margin:0;">MI ID (RECIBIR):</p>
-            <div class="id-text" id="my-id">...</div>
+    <div class="panel highlight">
+        <div style="display:flex; justify-content:space-between;">
+            <strong style="color:#00d2ff;">📡 SEÑAL HACIA DETECTOR</strong>
+            <div><span id="conn-dot" class="status-dot"></span><span id="conn-text" style="font-size:0.8rem;">Esperando Detector...</span></div>
         </div>
-        <div class="config-box" style="border-color: #005500;">
-            <p style="color:#888; margin:0 0 5px 0;">ENVIAR A (SALIDA):</p>
-            <input type="text" id="listener-id" placeholder="ID del Oyente">
-            <button class="btn-link" onclick="connectToMaster()">ENLAZAR SALIDA 📡</button>
+        <hr style="border-color:#333; margin: 10px 0;">
+        
+        <label>VOLUMEN DE ENVÍO (GANANCIA)</label>
+        <input type="range" id="master-vol" min="0" max="3" step="0.1" value="1.5">
+    </div>
+
+    <div class="panel">
+        <strong>🎧 MONITOR LOCAL (PRUEBAS)</strong>
+        <p style="font-size: 0.8rem; color: #888; margin: 5px 0;">Activa esto para probar micros si el Detector está en OFF.</p>
+        <button id="btn-monitor" class="btn btn-monitor">ESCUCHAR AQUÍ: OFF</button>
+    </div>
+
+    <div class="channel-list" id="channels">
+        <div class="channel" style="border-left-color: #fff;">
+            <span>🎙️ MI MICRÓFONO (LOCAL)</span>
+            <span style="font-size:0.8rem; color:#0f0;">ACTIVO</span>
         </div>
     </div>
-
-    <div id="channels-container">
-        <p style="text-align: center; color: #444; margin-top: 40px;">Esperando micrófonos...</p>
-    </div>
-
-    <audio id="keep-alive" loop src="data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjIwLjEwMAAAAAAAAAAAAAAA//oeGQAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq"></audio>
 
 <script>
+    const MY_ID = "obr-mezclador-central";
+    let audioCtx, broadcastNode, monitorNode, masterGain;
     let peer;
-    let audioCtx;
-    let masterDest;
-    let wakeLock = null;
 
-    // 1. INICIO Y ACTIVACIÓN DE AUDIO (CRÍTICO)
-    document.getElementById('btn-init').addEventListener('click', async () => {
-        // Crear contexto de audio SOLO tras el click
+    document.getElementById('btn-start').addEventListener('click', async () => {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         audioCtx = new AudioContext();
-        masterDest = audioCtx.createMediaStreamDestination();
 
-        // Si está suspendido, reanudar
-        if (audioCtx.state === 'suspended') {
-            await audioCtx.resume();
-        }
+        // 1. RUTAS DE AUDIO
+        masterGain = audioCtx.createGain(); // Controla volumen hacia Detector
+        masterGain.gain.value = 1.5;
 
-        // Iniciar PeerJS
-        peer = new Peer(null);
+        broadcastNode = audioCtx.createMediaStreamDestination(); // El cable a internet
+        monitorNode = audioCtx.createGain(); // El cable a tus bocinas
+        monitorNode.gain.value = 0; // Empezar silenciado para no viciar
+        monitorNode.connect(audioCtx.destination);
+
+        // Conexión Maestra
+        masterGain.connect(broadcastNode);
+
+        // 2. PEERJS
+        peer = new Peer(MY_ID);
         
-        peer.on('open', id => {
-            document.getElementById('my-id').innerText = id;
-        });
-
+        peer.on('open', () => console.log("Mezclador Abierto"));
+        
+        // A) Alguien nos llama (Un Micrófono)
         peer.on('call', call => {
             call.answer();
-            call.on('stream', remoteStream => {
-                createChannel(call.peer, remoteStream);
+            call.on('stream', stream => {
+                // Si es el Detector pidiendo audio, NO lo mezclamos (loop infinito)
+                // Pero aquí asumimos que el Detector solo recibe.
+                addMicrophone(call.peer, stream);
             });
         });
 
-        // Wake Lock y Audio Fake
-        try {
-            document.getElementById('keep-alive').play();
-            if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
-        } catch(e) { console.log(e); }
+        // B) Detector se conecta para recibir audio
+        peer.on('connection', conn => {
+            document.getElementById('conn-dot').classList.add('connected');
+            document.getElementById('conn-text').innerText = "DETECTOR CONECTADO";
+            // Cuando el detector se conecta por datos, le llamamos nosotros con el audio
+            setTimeout(() => {
+                peer.call(conn.peer, broadcastNode.stream);
+                console.log("Enviando audio al detector...");
+            }, 1000);
+        });
 
-        document.getElementById('overlay-start').style.display = 'none';
+        // 3. ACTIVAR MI MICROFONO
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+            addMicrophone("LOCAL", stream);
+        } catch(e) { console.log("Sin mic local"); }
+
+        document.getElementById('overlay').style.display = 'none';
     });
 
-    function toggleSettings() {
-        document.getElementById('settings-modal').classList.toggle('active');
-    }
-
-    function connectToMaster() {
-        const destId = document.getElementById('listener-id').value;
-        if(destId) {
-            peer.call(destId, masterDest.stream);
-            alert("Salida conectada");
-            toggleSettings();
-        }
-    }
-
-    // 2. CREAR CANAL CON VISUALIZADOR CORREGIDO
-    function createChannel(peerId, stream) {
-        const container = document.getElementById('channels-container');
-        // Limpiar mensaje de "esperando"
-        if(container.querySelector('p')) container.innerHTML = '';
-
-        // Nodos de Audio
+    // FUNCION: Mezclar Audio
+    function addMicrophone(id, stream) {
         const source = audioCtx.createMediaStreamSource(stream);
-        const gainNode = audioCtx.createGain();
-        const analyser = audioCtx.createAnalyser();
         
-        analyser.fftSize = 64; // Pocas barras pero gruesas (Mejor para celular)
+        // Enviar a la Salida (Detector)
+        source.connect(masterGain);
         
-        source.connect(gainNode);
-        gainNode.connect(analyser);
-        gainNode.connect(audioCtx.destination);
-        gainNode.connect(masterDest);
+        // Enviar al Monitor (Local)
+        source.connect(monitorNode);
 
-        // HTML Structure
-        const div = document.createElement('div');
-        div.className = 'channel-strip live';
-        div.innerHTML = `
-            <div class="info-row">
-                <span>📱 ${peerId.substring(0,5)}</span>
-                <span style="color:#0f0">● LIVE</span>
-            </div>
-            
-            <div class="viz-container">
-                <div class="viz-grid"></div>
-                <canvas width="300" height="80"></canvas>
-            </div>
-            <div class="audio-warning">⚠️ Audio pausado - Toca la pantalla</div>
-
-            <div class="controls">
-                <div class="slider-container">
-                    <label style="font-size:0.7rem; color:#888;">GANANCIA (Volumen)</label>
-                    <input type="range" min="0" max="3" step="0.1" value="1">
-                </div>
-                <button class="btn-mute">MUTE</button>
-            </div>
-        `;
-        container.appendChild(div);
-
-        // CONTROLES LOGIC
-        const slider = div.querySelector('input');
-        const muteBtn = div.querySelector('.btn-mute');
-        const warning = div.querySelector('.audio-warning');
-        let lastVal = 1;
-
-        slider.addEventListener('input', e => gainNode.gain.value = e.target.value);
-        
-        muteBtn.addEventListener('click', () => {
-            if(gainNode.gain.value > 0) {
-                lastVal = slider.value;
-                gainNode.gain.value = 0;
-                slider.value = 0;
-                slider.disabled = true;
-                muteBtn.classList.add('muted');
-                muteBtn.innerText = "OFF";
-            } else {
-                gainNode.gain.value = lastVal;
-                slider.value = lastVal;
-                slider.disabled = false;
-                muteBtn.classList.remove('muted');
-                muteBtn.innerText = "MUTE";
-            }
-        });
-
-        // VISUALIZADOR LOGIC (CORREGIDA)
-        const canvas = div.querySelector('canvas');
-        const ctx = canvas.getContext('2d');
-        const bufferLength = analyser.frequencyBinCount;
-        const dataArray = new Uint8Array(bufferLength);
-
-        function draw() {
-            if(!div.parentNode) return; // Parar si se elimina
-            requestAnimationFrame(draw);
-
-            // Chequeo de seguridad de AudioContext
-            if(audioCtx.state === 'suspended') {
-                warning.style.display = 'block';
-            } else {
-                warning.style.display = 'none';
-            }
-
-            analyser.getByteFrequencyData(dataArray);
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            const barWidth = (canvas.width / bufferLength);
-            let barHeight;
-            let x = 0;
-
-            for(let i = 0; i < bufferLength; i++) {
-                // Escalar altura para que se note más
-                barHeight = (dataArray[i] / 255) * canvas.height; 
-
-                // Dibujar barra
-                ctx.fillStyle = `rgb(0, ${dataArray[i] + 100}, 255)`;
-                
-                // Si está muy alto (saturado), poner rojo
-                if(dataArray[i] > 230) ctx.fillStyle = '#ff0000';
-
-                // Dibuja desde abajo hacia arriba
-                ctx.fillRect(x, canvas.height - barHeight, barWidth - 2, barHeight);
-
-                x += barWidth;
-            }
+        if(id !== "LOCAL") {
+            const div = document.createElement('div');
+            div.className = 'channel';
+            div.innerHTML = `<span>📱 ${id}</span><span style="color:#0f0; font-size:0.8rem;">EN VIVO</span>`;
+            document.getElementById('channels').appendChild(div);
         }
-        draw();
-        
-        // Hack: Reanudar contexto si tocan este canal
-        div.addEventListener('click', () => {
-            if(audioCtx.state === 'suspended') audioCtx.resume();
-        });
     }
+
+    // CONTROL: Volumen Salida
+    document.getElementById('master-vol').addEventListener('input', e => {
+        masterGain.gain.value = e.target.value;
+    });
+
+    // CONTROL: Monitor Local
+    const btnMon = document.getElementById('btn-monitor');
+    let monitorOn = false;
+    btnMon.addEventListener('click', () => {
+        monitorOn = !monitorOn;
+        if(monitorOn) {
+            monitorNode.gain.value = 1;
+            btnMon.classList.add('active');
+            btnMon.innerText = "ESCUCHAR AQUÍ: ON";
+        } else {
+            monitorNode.gain.value = 0;
+            btnMon.classList.remove('active');
+            btnMon.innerText = "ESCUCHAR AQUÍ: OFF";
+        }
+    });
 </script>
 </body>
 </html>
