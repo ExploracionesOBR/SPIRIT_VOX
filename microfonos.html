@@ -3,205 +3,207 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🎙️ MIC OBR</title>
+    <title>🎙️ EXPLORACIONES OBR - MICRO</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
-        /* AHORRO DE BATERÍA EXTREMO */
+        :root { --accent: #00d2ff; --danger: #ff0000; }
         body { 
-            background-color: #000000; 
-            color: #ffffff; 
-            font-family: system-ui, -apple-system, sans-serif;
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            height: 100vh; 
-            margin: 0; 
-            overflow: hidden;
-            user-select: none;
+            /* FONDO DE PANTALLA */
+            background: url('fondo_pantalla.jpg') no-repeat center center fixed; 
+            background-size: cover; color: #ffffff; font-family: system-ui, -apple-system, sans-serif;
+            display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box;
+            backdrop-filter: brightness(0.3); /* Fondo muy oscuro para resaltar controles */
         }
 
-        /* INPUT DISCRETO */
-        .input-container { margin-bottom: 40px; width: 80%; text-align: center; }
-        label { color: #666; font-size: 0.8rem; letter-spacing: 1px; margin-bottom: 5px; display: block; }
-        input { 
-            background: #1a1a1a; 
-            border: 1px solid #333; 
-            color: #00d2ff; 
-            padding: 15px; 
-            border-radius: 8px; 
-            width: 100%; 
-            text-align: center; 
-            font-size: 1.2rem;
-            outline: none;
-            font-weight: bold;
-        }
-        input:focus { border-color: #00d2ff; }
+        .logo-header { margin-bottom: 30px; text-align: center; }
+        .obr-logo { width: 80px; height: auto; margin-bottom: 10px; filter: drop-shadow(0 0 10px var(--accent)); }
+        h1 { margin: 0; color: var(--accent); font-size: 1.5rem; letter-spacing: 2px; }
+        p { color: #aaa; margin-top: 5px; }
 
-        /* EL BOTÓN DE PÁNICO/TRANSMISIÓN */
-        #btn-mic {
-            width: 180px;
-            height: 180px;
-            border-radius: 50%;
-            border: 4px solid #333;
-            background: linear-gradient(145deg, #111, #222);
-            color: #666;
-            cursor: pointer;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-            position: relative;
+        /* CONTENEDOR PRINCIPAL */
+        .main-card {
+            background: rgba(0,0,0,0.7); border: 1px solid #333; border-radius: 15px;
+            padding: 25px; width: 100%; max-width: 400px; text-align: center;
+            backdrop-filter: blur(10px); box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
-        #btn-mic span { font-size: 3rem; margin-bottom: 5px; }
-        #btn-mic p { margin: 0; font-size: 0.9rem; font-weight: bold; }
+        /* ÁREA DE ESCÁNER QR */
+        #qr-reader { width: 100%; margin-bottom: 20px; border: none !important; display: none; }
+        /* Personalización de la librería de QR */
+        #qr-reader__scan_region { background: rgba(0,0,0,0.5); }
+        #qr-reader__dashboard_section_csr button { background: var(--accent) !important; color: black !important; border: none !important; padding: 10px; border-radius: 5px; font-weight: bold; }
 
-        /* ESTADO ACTIVO (ROJO VIVO) */
-        #btn-mic.active {
-            border-color: #ff0000;
-            background: #cc0000;
-            color: white;
-            box-shadow: 0 0 50px rgba(255, 0, 0, 0.4);
-            animation: latido 1.5s infinite;
+        /* BOTÓN PRINCIPAL (Escáner y Estado) */
+        #btn-action {
+            width: 100%; padding: 20px; font-size: 1.2rem; font-weight: bold;
+            border: none; border-radius: 12px; cursor: pointer; transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            background: var(--accent); color: #000; box-shadow: 0 0 15px rgba(0, 210, 255, 0.3);
         }
 
-        @keyframes latido {
-            0% { transform: scale(1); box-shadow: 0 0 20px rgba(255, 0, 0, 0.4); }
-            50% { transform: scale(1.05); box-shadow: 0 0 40px rgba(255, 0, 0, 0.7); }
-            100% { transform: scale(1); box-shadow: 0 0 20px rgba(255, 0, 0, 0.4); }
+        /* Estado: Conectado/Transmitiendo */
+        #btn-action.live {
+            background: var(--danger); color: white;
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.5);
+            animation: pulseLive 1.5s infinite;
         }
+        @keyframes pulseLive { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
 
-        #status { margin-top: 30px; color: #444; font-family: monospace; }
+        #status { margin-top: 20px; font-weight: bold; color: #666; }
         
-        /* Audio invisible para mantener el proceso vivo en iOS/Android */
+        /* Audio invisible para mantener activo el móvil */
         audio { display: none; }
     </style>
 </head>
 <body>
 
-    <div class="input-container">
-        <label>ID DEL MEZCLADOR</label>
-        <input type="text" id="receiver-id" placeholder="Pega el ID aquí">
+    <div class="logo-header">
+        <img src="obr-logo.png" alt="OBR Logo" class="obr-logo">
+        <h1>MICROFONO OBR</h1>
+        <p>Unidad de Exploración</p>
     </div>
 
-    <div id="btn-mic">
-        <span>🎙️</span>
-        <p>TOCAR PARA<br>HABLAR</p>
+    <div class="main-card">
+        <div id="qr-reader"></div>
+
+        <button id="btn-action">
+            <span>📷</span> <span id="btn-text">ESCANEAR QR MEZCLADOR</span>
+        </button>
+        
+        <div id="status">Listo para enlazar</div>
     </div>
 
-    <div id="status">ESPERANDO CONEXIÓN...</div>
-
-    <audio id="fake-audio" loop playsinline>
-        <source src="data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjIwLjEwMAAAAAAAAAAAAAAA//oeGQAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq" type="audio/mpeg">
-    </audio>
+    <audio id="fake-audio" loop playsinline src="data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjIwLjEwMAAAAAAAAAAAAAAA//oeGQAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq"></audio>
 
 <script>
-    const btn = document.getElementById('btn-mic');
-    const input = document.getElementById('receiver-id');
+    const btn = document.getElementById('btn-action');
+    const btnText = document.getElementById('btn-text');
     const status = document.getElementById('status');
+    const qrContainer = document.getElementById('qr-reader');
     const fakeAudio = document.getElementById('fake-audio');
     
     let peer = null;
     let currentCall = null;
-    let wakeLock = null;
-    let isTransmitting = false;
+    let html5QrCode = null;
+    let isScanning = false;
+    let isConnected = false;
 
-    // Inicializar PeerJS
-    function initPeer() {
-        peer = new Peer(null);
-        peer.on('open', (id) => {
-            console.log('Mi ID de Micro:', id);
-            status.innerText = "LISTO PARA CONECTAR";
-        });
-        peer.on('error', (err) => {
-            status.innerText = "Error: " + err.type;
-            resetUI();
-        });
-    }
-    initPeer();
+    // Generar ID único para este micrófono
+    const myMicId = "obr-mic-" + Math.floor(Math.random() * 9999);
+    peer = new Peer(myMicId);
+
+    peer.on('error', err => {
+        status.innerText = "Error: " + err.type; colorStatus(false);
+    });
 
     btn.addEventListener('click', () => {
-        if (!isTransmitting) {
-            startTransmission();
-        } else {
+        // Si ya está conectado, el botón sirve para DESCONECTAR
+        if(isConnected) {
             stopTransmission();
+            return;
+        }
+
+        // Si no está conectado, el botón sirve para INICIAR ESCÁNER
+        if (!isScanning) {
+            startQRScanner();
+        } else {
+            stopQRScanner(); // Cancelar escaneo si se vuelve a tocar
         }
     });
 
-    async function startTransmission() {
-        const mixerId = input.value.trim();
-        if (!mixerId) return alert("¡Necesitas el ID del Mezclador!");
+    // --- LÓGICA DEL ESCÁNER QR ---
+    function startQRScanner() {
+        isScanning = true;
+        qrContainer.style.display = "block";
+        btnText.innerText = "CANCELAR CÁMARA";
+        status.innerText = "Apunta al código QR del Mezclador...";
 
+        html5QrCode = new Html5Qrcode("qr-reader");
+        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+        
+        // Usar cámara trasera si es posible
+        html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure);
+    }
+
+    function stopQRScanner() {
+        isScanning = false;
+        if(html5QrCode) {
+            html5QrCode.stop().then(() => {
+                qrContainer.style.display = "none";
+                html5QrCode.clear();
+            }).catch(err => console.log("Error al parar camara", err));
+        }
+        if(!isConnected) {
+            btnText.innerText = "ESCANEAR QR MEZCLADOR";
+            status.innerText = "Escaneo cancelado.";
+        }
+    }
+
+    // ¡CÓDIGO ENCONTRADO!
+    function onScanSuccess(decodedText, decodedResult) {
+        // decodedText es el ID del mezclador
+        console.log(`Code matched = ${decodedText}`);
+        stopQRScanner();
+        
+        // Iniciar proceso de conexión con el ID escaneado
+        connectToMixer(decodedText);
+    }
+    function onScanFailure(error) { 
+        // console.warn(`Code scan error = ${error}`); // Demasiado ruido en consola
+    }
+
+    // --- LÓGICA DE CONEXIÓN Y AUDIO ---
+    async function connectToMixer(mixerId) {
+        status.innerText = "Conectando al ID: " + mixerId + "...";
+        
         try {
-            // 1. Pedir Microfono (Calidad Alta para Voz)
+            // 1. Obtener Audio
             const stream = await navigator.mediaDevices.getUserMedia({ 
-                audio: { 
-                    echoCancellation: true, 
-                    noiseSuppression: true,
-                    autoGainControl: true
-                }, 
-                video: false 
+                audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: false 
             });
 
-            // 2. Activar Hacks de Persistencia
-            activarModoBackground();
+            // 2. Activar Hacks de segundo plano
+            fakeAudio.play().catch(e => {});
+            if ('wakeLock' in navigator) navigator.wakeLock.request('screen').catch(e=>{});
 
-            // 3. Llamar al Mezclador
-            status.innerText = "CONECTANDO...";
+            // 3. Llamar al mezclador
             const call = peer.call(mixerId, stream);
             currentCall = call;
 
+            // 4. Actualizar Interfaz a modo "EN VIVO"
+            isConnected = true;
+            btn.classList.add('live');
+            btn.innerHTML = "🛑 DETENER TRANSMISIÓN";
+            status.innerText = "🔴 EN VIVO - Transmitiendo a Base";
+            status.style.color = "#ff0000";
+            
             call.on('close', stopTransmission);
             call.on('error', stopTransmission);
 
-            // 4. Cambiar UI
-            isTransmitting = true;
-            btn.classList.add('active');
-            btn.querySelector('p').innerHTML = "EN VIVO<br>TRANSMITIENDO";
-            status.innerText = "🔴 SEÑAL ENVIADA AL MEZCLADOR";
-            status.style.color = "#ff4444";
-            input.disabled = true;
-
         } catch (err) {
             console.error(err);
-            alert("No se pudo acceder al micrófono. Verifica permisos HTTPS.");
-            resetUI();
+            status.innerText = "Error: No se pudo acceder al micrófono."; colorStatus(false);
+            stopTransmission();
         }
     }
 
     function stopTransmission() {
         if (currentCall) currentCall.close();
-        if (wakeLock) wakeLock.release();
         fakeAudio.pause();
-        
-        // Es mejor recargar la página para limpiar la memoria del navegador móvil
-        window.location.reload();
+        resetUI();
     }
 
     function resetUI() {
-        isTransmitting = false;
-        btn.classList.remove('active');
-        btn.querySelector('p').innerHTML = "TOCAR PARA<br>HABLAR";
-        status.innerText = "DESCONECTADO";
-        status.style.color = "#444";
-        input.disabled = false;
+        isConnected = false;
+        isScanning = false;
+        btn.classList.remove('live');
+        btn.innerHTML = "<span>📷</span> <span id='btn-text'>ESCANEAR QR MEZCLADOR</span>";
+        status.innerText = "Desconectado. Listo para enlazar.";
+        status.style.color = "#666";
+        qrContainer.style.display = "none";
     }
-
-    // --- SISTEMA ANTI-BLOQUEO ---
-    async function activarModoBackground() {
-        // Truco 1: Reproducir silencio para que Android/iOS crea que es música
-        fakeAudio.play().catch(e => console.log("Audio autoplay bloqueado"));
-
-        // Truco 2: Wake Lock API para mantener pantalla encendida
-        if ('wakeLock' in navigator) {
-            try {
-                wakeLock = await navigator.wakeLock.request('screen');
-            } catch (err) { console.log('Wake Lock no disponible'); }
-        }
-    }
+    function colorStatus(good) { status.style.color = good ? var(--accent) : "#666"; }
 </script>
 </body>
 </html>
