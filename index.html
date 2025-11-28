@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>OBR LINK v33.0 SPIRIT CORE</title>
+    <title>OBR LINK v33.2 ANTI-SELECT</title>
     
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
@@ -16,13 +16,23 @@
     <style>
         :root { --primary: #00f3ff; --secondary: #ff0055; --success: #00ff41; --warn: #ffae00; }
         
-        * { -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; user-select: none; outline: none; }
+        /* --- CORE FIX: EVITAR SELECCION AZUL --- */
+        * { 
+            -webkit-tap-highlight-color: transparent; 
+            -webkit-touch-callout: none; 
+            -webkit-user-select: none; 
+            -moz-user-select: none; 
+            -ms-user-select: none; 
+            user-select: none; 
+            outline: none; 
+        }
 
         html, body {
             background-color: #000;
             color: var(--primary); font-family: 'Orbitron', sans-serif;
             overflow: hidden; width: 100vw; height: 100dvh;
             margin: 0; padding: 0; position: fixed;
+            touch-action: none; /* Bloquea gestos del navegador */
         }
 
         /* FONDOS */
@@ -33,6 +43,7 @@
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             object-fit: cover; z-index: -15; display: none; 
             filter: sepia(0.4) contrast(1.1) brightness(0.6);
+            pointer-events: none; /* Evita clicks en el video */
         }
         #cam-filter-layer {
             position: fixed; inset: 0; z-index: -12; pointer-events: none; display: none;
@@ -79,7 +90,7 @@
 
         /* BOTON API (EN MENU) */
         #btn-api-config {
-            position: absolute; top: 20px; right: 20px; z-index: 60;
+            position: absolute; top: 25px; right: 20px; z-index: 60;
             color: #aaa; font-size: 1.2rem; cursor: pointer;
             width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
             background: rgba(0,0,0,0.5); border-radius: 50%; transition: 0.3s;
@@ -106,18 +117,26 @@
 
         /* INVOKE BUTTON */
         .invoke-container { position: absolute; bottom: 40px; left: 0; width: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 50; }
-        .invoke-btn { width: 90px; height: 90px; border-radius: 50%; border: 2px solid #555; background: rgba(0,0,0,0.8); color: #555; font-size: 2.5rem; display: flex; align-items: center; justify-content: center; transition: 0.3s; backdrop-filter: blur(4px); cursor: not-allowed; }
+        .invoke-btn { 
+            width: 90px; height: 90px; border-radius: 50%; border: 2px solid #555; 
+            background: rgba(0,0,0,0.8); color: #555; font-size: 2.5rem; 
+            display: flex; align-items: center; justify-content: center; 
+            transition: 0.3s; backdrop-filter: blur(4px); cursor: not-allowed;
+            touch-action: none; /* IMPORTANTE: Bloquea gestos */
+        }
         .invoke-btn.ready { border-color: rgba(255,255,255,0.5); color: rgba(255,255,255,0.8); cursor: pointer; background: rgba(20,0,0,0.5); }
         .invoke-btn.ready:active { transform: scale(0.95); background: var(--secondary); color: white; border-color: white; }
         .invoke-btn.listening { border-color: var(--success); color: var(--success); box-shadow: 0 0 30px var(--success) inset; transform: scale(1.1); animation: none; background: rgba(0, 50, 0, 0.5); }
         .invoke-btn.locked { border-color: #333; color: #333; background: black; cursor: not-allowed; transform: scale(0.9); animation: none; }
-        
+
+        @keyframes pulseFast { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(0.95); } 100% { opacity: 1; transform: scale(1); } }
+
         #spirit-text { position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%); width: 95%; text-align: center; font-family: 'Creepster'; font-size: 3rem; color: rgba(255, 255, 255, 0.95); text-shadow: 0 4px 15px black; pointer-events: none; z-index: 40; line-height: 1; transition: opacity 0.3s; }
         #invoke-label { font-size: 0.6rem; color: #666; margin-top: 10px; font-family: 'Share Tech Mono'; letter-spacing: 1px; height: 15px; }
         
         /* BOTON DICCIONARIO */
         #btn-dictionary {
-            position: absolute; top: 20px; right: 20px; z-index: 60;
+            position: absolute; top: 25px; right: 20px; z-index: 60;
             color: rgba(255, 255, 255, 0.4); font-size: 1.2rem; cursor: pointer;
             display: none; /* Se muestra solo en spirit mode */
         }
@@ -134,7 +153,7 @@
 
     </style>
 </head>
-<body>
+<body oncontextmenu="return false;" onselectstart="return false;">
 
     <div id="bg-static"></div>
     <div id="bg-overlay"></div>
@@ -147,7 +166,7 @@
         <h1 class="text-3xl font-bold tracking-widest text-white mb-2">OBR LINK</h1>
         <p class="text-xs text-gray-400 font-mono mb-10">TERMINAL DE ENLACE</p>
         <button class="app-btn justify-center font-bold tracking-widest" onclick="startSystem()">INICIAR</button>
-        <p class="absolute bottom-6 text-[10px] text-gray-600">v33.0 SPIRIT CORE</p>
+        <p class="absolute bottom-6 text-[10px] text-gray-600">v33.2 ANTI-SELECT</p>
     </div>
 
     <!-- 2. SCANNER -->
@@ -157,7 +176,9 @@
         <div class="absolute top-12 bg-black/80 px-6 py-2 rounded-full border border-cyan-500 text-cyan-400 text-sm font-bold">ESCANEAR DETECTOR</div>
         
         <!-- BOTON DISCRETO OFFLINE -->
-        <div id="btn-offline-access" onclick="openAuthModal()"><i class="fas fa-cog"></i></div>
+        <div id="btn-offline-access" onclick="openAuthModal()">
+            <i class="fas fa-cog"></i>
+        </div>
 
         <button onclick="location.reload()" class="absolute bottom-12 text-red-500 text-xs font-bold border-b border-red-500">CANCELAR</button>
     </div>
@@ -182,14 +203,15 @@
             <input type="text" id="input-api-key" class="auth-input" placeholder="AIzaSy...">
             <div class="flex gap-2 mt-4">
                 <button onclick="document.getElementById('modal-api').classList.remove('active')" class="flex-1 py-3 bg-gray-800 text-xs text-white rounded">CERRAR</button>
-                <button onclick="saveApiKey()" class="flex-1 py-3 bg-blue-600 text-xs text-white rounded font-bold">GUARDAR</button>
+                <button id="btn-save-api" onclick="saveApiKey()" class="flex-1 py-3 bg-blue-600 text-xs text-white rounded font-bold">VALIDAR Y GUARDAR</button>
             </div>
         </div>
     </div>
 
     <!-- MODAL DICCIONARIO -->
     <div id="modal-dictionary" class="modal-overlay" style="z-index: 5000;">
-        <div class="modal-box" style="max-width: 500px;">
+        <!-- MARGEN SUPERIOR AÑADIDO PARA BAJARLO (mt-24) -->
+        <div class="modal-box mt-24" style="max-width: 500px;">
             <h3 class="text-green-400 font-bold mb-2 tracking-widest">BANCO DE PALABRAS</h3>
             <p class="text-[10px] text-gray-500 mb-4">Generado por IA desde Foto Semilla</p>
             <div id="word-list-container" class="word-list border border-gray-800 p-2 rounded h-64 bg-black">
@@ -205,7 +227,7 @@
             <img src="obr-logo.png" class="w-20 mx-auto mb-2">
             <div id="menu-status" class="text-xs text-green-400 font-bold tracking-widest">CONECTADO</div>
             
-            <!-- BOTON API SETTINGS -->
+            <!-- BOTON API SUPERIOR DERECHA -->
             <div id="btn-api-config" onclick="openApiSettings()"><i class="fas fa-cog"></i></div>
         </div>
 
@@ -268,18 +290,27 @@
     <div id="modal-photo" class="modal-overlay" style="z-index: 3000;">
         <div class="modal-box">
             <h3 class="text-red-500 font-bold mb-2 font-creepy tracking-widest text-xl">CALIBRAR ENTORNO</h3>
-            <p class="text-[10px] text-gray-400 mb-4">Toma una foto para generar el banco de 100 palabras espectrales.</p>
+            <p class="text-[10px] text-gray-400 mb-4">Toma una foto del lugar para generar el banco de palabras.</p>
             
-            <label class="photo-btn">
-                <i class="fas fa-camera text-2xl"></i>
-                <span>TOMAR FOTO</span>
-                <input type="file" accept="image/*" capture="environment" hidden onchange="processSeedPhoto(this)">
-            </label>
+            <!-- VISOR DE CAMARA -->
+            <div class="relative w-full h-48 bg-black rounded-lg overflow-hidden mb-4 border border-gray-800 shadow-[0_0_20px_rgba(255,0,0,0.2)]">
+                <video id="seed-video" class="w-full h-full object-cover" autoplay playsinline muted></video>
+                <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-30">
+                    <div class="w-10 h-10 border-2 border-red-500 rounded-full"></div>
+                    <div class="absolute w-full h-[1px] bg-red-500"></div>
+                    <div class="absolute h-full w-[1px] bg-red-500"></div>
+                </div>
+            </div>
+            
+            <button onclick="captureAndAnalyze()" class="photo-btn">
+                <i class="fas fa-camera text-xl"></i>
+                <span>ESCANEAR AHORA</span>
+            </button>
             
             <div id="loading-spinner"></div>
             <div id="photo-status" class="text-xs text-yellow-500 mt-2 h-4"></div>
 
-            <button onclick="document.getElementById('modal-photo').classList.remove('active')" class="mt-4 text-xs text-gray-500 underline">CANCELAR</button>
+            <button onclick="closePhotoModal()" class="mt-4 text-xs text-gray-500 underline">CANCELAR</button>
         </div>
     </div>
 
@@ -292,6 +323,7 @@
     let currentPitch = 0.5; let currentRate = 0.8;
     let spiritScript = []; 
     let isCalibrated = false;
+    let isFallbackMode = false;
 
     // 1. SYSTEM START
     async function startSystem() {
@@ -305,7 +337,7 @@
 
             document.getElementById('scan-video').srcObject = stream;
             document.getElementById('cam-video-bg').srcObject = stream;
-            document.getElementById('keep-alive-video').srcObject = stream; // Raw feed for AI
+            document.getElementById('keep-alive-video').srcObject = stream;
             
             document.getElementById('scan-video').play();
             document.getElementById('cam-video-bg').play();
@@ -332,6 +364,7 @@
             isStandalone = true;
             closeAuthModal();
             updateStatusUI(false);
+            if(GEMINI_API_KEY) validateApiKey(GEMINI_API_KEY);
             show('s-menu');
         } else alert("ACCESO DENEGADO");
     }
@@ -341,7 +374,7 @@
         const cvs = document.createElement('canvas'); const ctx = cvs.getContext('2d');
         function loop() {
             if(isStandalone) return;
-            if(v.readyState===4 && document.getElementById('s-scan').style.display === 'flex') {
+            if(v.readyState===4 && document.getElementById('s-scan').classList.contains('active')) {
                 cvs.width=v.videoWidth; cvs.height=v.videoHeight; ctx.drawImage(v,0,0);
                 const c = jsQR(ctx.getImageData(0,0,cvs.width,cvs.height).data, cvs.width, cvs.height);
                 if(c) { link(c.data); return; }
@@ -364,21 +397,21 @@
     }
 
     function updateStatusUI(online) {
-        const dot = document.getElementById('live-dot');
-        const txt = document.getElementById('live-text');
+        const dot = document.querySelector('.status-indicator .dot');
+        const txt = document.querySelector('.status-indicator span');
         const menuStat = document.getElementById('menu-status');
         if(online) {
-            if(dot) dot.className = "dot online"; if(txt){ txt.innerText = "EN VIVO"; txt.style.color="#00ff41"; }
+            dot.className = "dot online"; txt.innerText = "EN VIVO"; txt.style.color="#00ff41";
             menuStat.innerText = "CONECTADO"; menuStat.style.color="#00ff41";
             menuStat.style.borderColor = "#00ff41";
         } else {
-            if(dot) dot.className = "dot offline"; if(txt){ txt.innerText = "OFFLINE"; txt.style.color="#ff0055"; }
+            dot.className = "dot offline"; txt.innerText = "OFFLINE"; txt.style.color="#ff0055";
             menuStat.innerText = "MODO OFFLINE"; menuStat.style.color="#ffae00";
             menuStat.style.borderColor = "#ffae00";
         }
     }
 
-    // 3. API VALIDATION (GET PING)
+    // 3. API VALIDATION
     function openApiSettings() {
         document.getElementById('input-api-key').value = GEMINI_API_KEY;
         document.getElementById('modal-api').classList.add('active');
@@ -387,28 +420,49 @@
     async function saveApiKey() {
         const key = document.getElementById('input-api-key').value.trim();
         if(key.length > 10) {
-            localStorage.setItem('obr_api_key_mic', key);
-            GEMINI_API_KEY = key;
-            document.getElementById('modal-api').classList.remove('active');
-            // Now update UI status (async)
-            validateApiKey(key);
+            const btn = document.getElementById('btn-save-api');
+            const originalText = btn.innerText;
+            btn.innerText = "VERIFICANDO...";
+            btn.disabled = true;
+            
+            try {
+                const isValid = await validateApiKey(key, false);
+                btn.innerText = originalText;
+                btn.disabled = false;
+
+                if(isValid) {
+                    localStorage.setItem('obr_api_key_mic', key);
+                    GEMINI_API_KEY = key;
+                    document.getElementById('modal-api').classList.remove('active');
+                    alert("CONEXIÓN EXITOSA");
+                } else {
+                    alert("ERROR DE CONEXIÓN");
+                }
+            } catch (e) {
+                btn.innerText = originalText;
+                btn.disabled = false;
+                alert("ERROR DE RED");
+            }
         }
     }
     
-    async function validateApiKey(key) {
-        updateApiStatus(undefined); // Loading
+    async function validateApiKey(key, silent) {
+        if(!silent) updateApiStatus(undefined); 
+        
         try {
-            // Use dummy request to test connection/key
+            // PING GEMINI 2.5
             const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${key}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ contents: [{ parts: [{ text: "Ping" }] }] })
             });
             
-            if(response.ok) updateApiStatus(true);
-            else updateApiStatus(false);
+            const valid = response.ok;
+            updateApiStatus(valid);
+            return valid;
         } catch(e) {
             updateApiStatus(false);
+            return false;
         }
     }
     
@@ -416,24 +470,24 @@
         const btn = document.getElementById('btn-spirit');
         const status = document.getElementById('spirit-status');
         
+        if(!btn || !status) return;
+
         if(isValid === true) {
             btn.classList.remove('locked');
             btn.onclick = () => checkSpiritMode(); 
-            status.innerHTML = "LISTO";
+            status.innerHTML = "CONEXIÓN ESTABLECIDA";
             status.style.color = "#00ff41";
         } else if (isValid === false) {
             btn.classList.add('locked');
             btn.onclick = null;
-            status.innerHTML = '<i class="fas fa-lock"></i> ERROR API';
+            status.innerHTML = '<i class="fas fa-lock"></i> ERROR DE CONEXIÓN';
             status.style.color = "#ff3333";
         } else if (isValid === undefined) {
-             // Loading
              btn.classList.add('locked');
              btn.onclick = null;
              status.innerHTML = '<i class="fas fa-sync fa-spin"></i> VERIFICANDO...';
              status.style.color = "#ffae00";
         } else {
-             // Null = Initial
              btn.classList.add('locked');
              btn.onclick = null;
              status.innerHTML = '<i class="fas fa-lock"></i> REQUIERE API KEY';
@@ -444,22 +498,45 @@
     // 4. MODE LOGIC
     function checkSpiritMode() {
         if(!document.getElementById('btn-spirit').classList.contains('locked')) {
-            document.getElementById('modal-photo').classList.add('active');
+            openPhotoModal();
         }
     }
 
-    async function processSeedPhoto(input) {
-        const file = input.files[0];
-        if(!file) return;
-        
+    function openPhotoModal() {
+        const modal = document.getElementById('modal-photo');
+        const videoPreview = document.getElementById('seed-video');
+        if(stream) {
+            videoPreview.srcObject = stream;
+            videoPreview.play();
+        }
+        modal.classList.add('active');
+    }
+
+    function closePhotoModal() {
+        const modal = document.getElementById('modal-photo');
+        const videoPreview = document.getElementById('seed-video');
+        videoPreview.srcObject = null; 
+        modal.classList.remove('active');
+    }
+
+    async function captureAndAnalyze() {
         const status = document.getElementById('photo-status');
         const spinner = document.getElementById('loading-spinner');
+        const videoPreview = document.getElementById('seed-video');
+        
+        if(!videoPreview.videoWidth) {
+            status.innerText = "ESPERA A LA CAMARA...";
+            return;
+        }
+
         status.innerText = "ANALIZANDO..."; spinner.style.display = 'block';
         
-        const reader = new FileReader();
-        reader.onload = async function(e) {
-            const b64 = e.target.result.split(',')[1];
-            
+        const cvs = document.createElement('canvas');
+        cvs.width = 640; cvs.height = 480;
+        cvs.getContext('2d').drawImage(videoPreview, 0, 0, 640, 480);
+        const b64 = cvs.toDataURL('image/jpeg', 0.6).split(',')[1];
+        
+        const apiCall = new Promise(async (resolve, reject) => {
             try {
                 const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`, {
                     method:'POST', headers:{'Content-Type':'application/json'},
@@ -469,30 +546,31 @@
                 });
                 const d = await r.json();
                 const rawText = d.candidates?.[0]?.content?.parts?.[0]?.text || "";
-                
                 if(rawText) {
                     spiritScript = rawText.split('|').map(s => s.trim()).filter(s => s.length > 2);
-                    status.innerText = "LISTO";
-                    
-                    // Unlock Dictionary Button
-                    document.getElementById('btn-dictionary').style.display = 'block';
-                    
-                    setTimeout(() => {
-                        document.getElementById('modal-photo').classList.remove('active');
-                        setMode('spirit');
-                    }, 1000);
-                } else throw new Error("Empty");
+                    isFallbackMode = false;
+                    resolve();
+                } else reject("Empty");
+            } catch(e) { reject(e); }
+        });
 
-            } catch(err) {
-                status.innerText = "ERROR IA - USANDO BACKUP";
-                spiritScript = ["VACÍO", "FRÍO", "AQUÍ", "DOLOR", "VEO", "ATRAS", "MUERTE", "AYUDA", "NO", "SI", "SOLO", "SOMBRA"];
-                setTimeout(() => {
-                    document.getElementById('modal-photo').classList.remove('active');
-                    setMode('spirit');
-                }, 1500);
-            }
-        };
-        reader.readAsDataURL(file);
+        const timeout = new Promise((_, reject) => setTimeout(() => reject("Timeout"), 5000));
+
+        try {
+            await Promise.race([apiCall, timeout]);
+            status.innerText = "LISTO";
+        } catch(e) {
+            console.log("Fallback Local");
+            spiritScript = ["VACÍO", "FRÍO", "AQUÍ", "DOLOR", "VEO", "ATRAS", "MUERTE", "AYUDA", "NO", "SI", "SOLO"];
+            isFallbackMode = true;
+            status.innerText = "MODO LOCAL";
+        } finally {
+            isCalibrated = true;
+            setTimeout(() => {
+                closePhotoModal();
+                setMode('spirit');
+            }, 1000);
+        }
     }
 
     function openDictionary() {
@@ -537,6 +615,8 @@
             
             enableButton();
             startPassiveLoop();
+            
+            document.getElementById('btn-dictionary').style.display = 'block';
         }
         initAudioEngine();
         show('s-live');
@@ -580,7 +660,7 @@
         clearInterval(autoSpiritInterval); 
         document.getElementById('bg-noise').volume = 0.1; 
         const btn = document.getElementById('invoke-btn');
-        btn.classList.remove('ready');
+        btn.classList.remove('fallback', 'ready');
         btn.classList.add('listening');
         document.getElementById('invoke-label').innerText = "ESCUCHANDO...";
         document.getElementById('invoke-label').style.color = "#00ff41";
@@ -655,8 +735,8 @@
     function speakWithEcho(text) {
         if('speechSynthesis' in window) {
             window.speechSynthesis.cancel();
-            const u1 = new SpeechSynthesisUtterance(text); u1.lang = 'es-ES'; u1.pitch = currentPitch; u1.rate = 0.8;
-            const u2 = new SpeechSynthesisUtterance(text); u2.lang = 'es-ES'; u2.pitch = currentPitch - 0.3; u2.rate = 0.7; u2.volume = 0.6;
+            const u1 = new SpeechSynthesisUtterance(text); u1.lang = 'es-ES'; u1.pitch = 0.5; u1.rate = 0.8;
+            const u2 = new SpeechSynthesisUtterance(text); u2.lang = 'es-ES'; u2.pitch = 0.3; u2.rate = 0.7; u2.volume = 0.6;
             window.speechSynthesis.speak(u1);
             setTimeout(()=>window.speechSynthesis.speak(u2), 120);
         }
