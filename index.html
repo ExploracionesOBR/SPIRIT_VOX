@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>OBR LINK v33.2 ANTI-SELECT</title>
+    <title>OBR LINK v34.0 REALISM</title>
+    
+    <link rel="apple-touch-icon" href="obr-logo.png">
+    <link rel="icon" type="image/png" href="obr-logo.png">
     
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
@@ -16,34 +19,22 @@
     <style>
         :root { --primary: #00f3ff; --secondary: #ff0055; --success: #00ff41; --warn: #ffae00; }
         
-        /* --- CORE FIX: EVITAR SELECCION AZUL --- */
-        * { 
-            -webkit-tap-highlight-color: transparent; 
-            -webkit-touch-callout: none; 
-            -webkit-user-select: none; 
-            -moz-user-select: none; 
-            -ms-user-select: none; 
-            user-select: none; 
-            outline: none; 
-        }
+        * { -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; user-select: none; outline: none; }
 
         html, body {
             background-color: #000;
             color: var(--primary); font-family: 'Orbitron', sans-serif;
             overflow: hidden; width: 100vw; height: 100dvh;
             margin: 0; padding: 0; position: fixed;
-            touch-action: none; /* Bloquea gestos del navegador */
         }
 
-        /* FONDOS */
         #bg-static { position: fixed; inset: 0; z-index: -10; background-image: url('fondo_pantalla.jpg'); background-size: cover; background-position: center; transition: opacity 0.5s; }
         #bg-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.9); z-index: -5; transition: opacity 0.5s ease; }
         
         #cam-video-bg {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             object-fit: cover; z-index: -15; display: none; 
-            filter: sepia(0.4) contrast(1.1) brightness(0.6);
-            pointer-events: none; /* Evita clicks en el video */
+            filter: sepia(0.6) contrast(1.2) brightness(0.5) grayscale(0.8);
         }
         #cam-filter-layer {
             position: fixed; inset: 0; z-index: -12; pointer-events: none; display: none;
@@ -52,52 +43,38 @@
             mix-blend-mode: multiply;
         }
 
-        /* PANTALLAS */
         .screen { position: fixed; inset: 0; z-index: 10; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 20px; opacity: 0; transition: opacity 0.3s; width: 100%; height: 100%; }
         .screen.active { display: flex; opacity: 1; z-index: 20; }
 
-        /* BOTONES MENU */
         .app-btn {
             background: rgba(0, 0, 0, 0.6); border: 1px solid var(--primary); color: white;
             padding: 20px; border-radius: 15px; width: 100%; max-width: 320px;
             display: flex; align-items: center; gap: 15px; cursor: pointer;
-            backdrop-filter: blur(10px); margin-bottom: 15px; transition: 0.2s; position: relative; overflow: hidden;
+            backdrop-filter: blur(10px); margin-bottom: 15px; transition: 0.2s;
         }
         .app-btn:active { transform: scale(0.98); background: var(--primary); color: black; }
         .app-btn.red { border-color: var(--secondary); }
         .app-btn.red:active { background: var(--secondary); color: white; }
-        
         .app-btn.locked { opacity: 0.5; filter: grayscale(1); pointer-events: none; border-color: #444; }
 
-        /* ESTADO EN BOTON */
-        .btn-status-indicator {
-            position: absolute; bottom: 5px; right: 10px; font-size: 0.6rem; font-weight: bold; display: flex; align-items: center; gap: 4px;
-        }
+        .btn-status-indicator { position: absolute; bottom: 5px; right: 10px; font-size: 0.6rem; font-weight: bold; display: flex; align-items: center; gap: 4px; }
 
-        /* SCANNER */
         #scan-video { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; z-index: -1; }
         .scan-box { width: 250px; height: 250px; border: 4px solid var(--primary); box-shadow: 0 0 30px var(--primary); position: relative; }
         .scan-line { width: 100%; height: 2px; background: var(--secondary); position: absolute; animation: scan 2s infinite; }
         @keyframes scan { 0%{top:0} 50%{top:100%} 100%{top:0} }
 
-        /* BOTON OFFLINE (GEAR) EN SCANNER */
-        #btn-offline-access { 
-            position: absolute; top: 20px; right: 20px; z-index: 60; 
-            color: rgba(255, 255, 255, 0.3); font-size: 1.5rem; cursor: pointer; padding: 10px; 
-            transition: 0.3s; 
-        }
+        #btn-offline-access { position: absolute; top: 20px; right: 20px; z-index: 60; color: rgba(255, 255, 255, 0.3); font-size: 1.2rem; cursor: pointer; padding: 10px; transition: 0.3s; }
         #btn-offline-access:active { color: var(--primary); opacity: 1; }
 
-        /* BOTON API (EN MENU) */
         #btn-api-config {
-            position: absolute; top: 25px; right: 20px; z-index: 60;
+            position: absolute; top: 20px; right: 20px; z-index: 60;
             color: #aaa; font-size: 1.2rem; cursor: pointer;
             width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
             background: rgba(0,0,0,0.5); border-radius: 50%; transition: 0.3s;
         }
         #btn-api-config:active { color: white; background: var(--secondary); transform: rotate(90deg); }
 
-        /* MODALES */
         .modal-overlay { position: fixed; inset: 0; z-index: 100; background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(5px); display: none; flex-direction: column; align-items: center; justify-content: center; }
         .modal-overlay.active { display: flex; }
         .modal-box { background: #111; border: 1px solid var(--secondary); padding: 20px; border-radius: 10px; width: 90%; max-width: 350px; text-align: center; box-shadow: 0 0 30px rgba(255, 0, 85, 0.1); position: relative; }
@@ -105,7 +82,6 @@
         
         .photo-btn { background: var(--secondary); color: white; font-weight: bold; padding: 15px; width: 100%; border-radius: 10px; margin-top: 10px; display: flex; justify-content: center; gap: 10px; align-items: center; cursor: pointer; }
 
-        /* LIVE UI */
         .status-bar { position: absolute; top: 0; left: 0; width: 100%; padding: 15px; display: flex; justify-content: space-between; align-items: flex-start; background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent); z-index: 50; pointer-events: none; }
         .status-bar button { pointer-events: auto; }
         
@@ -115,45 +91,61 @@
         .dot.offline { background: var(--secondary); box-shadow: 0 0 10px var(--secondary); }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
-        /* INVOKE BUTTON */
         .invoke-container { position: absolute; bottom: 40px; left: 0; width: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 50; }
+        
+        /* BOTON DE INVOCACION REDISEÑADO */
         .invoke-btn { 
             width: 90px; height: 90px; border-radius: 50%; border: 2px solid #555; 
             background: rgba(0,0,0,0.8); color: #555; font-size: 2.5rem; 
             display: flex; align-items: center; justify-content: center; 
             transition: 0.3s; backdrop-filter: blur(4px); cursor: not-allowed;
-            touch-action: none; /* IMPORTANTE: Bloquea gestos */
+            -webkit-touch-callout: none;
         }
-        .invoke-btn.ready { border-color: rgba(255,255,255,0.5); color: rgba(255,255,255,0.8); cursor: pointer; background: rgba(20,0,0,0.5); }
-        .invoke-btn.ready:active { transform: scale(0.95); background: var(--secondary); color: white; border-color: white; }
-        .invoke-btn.listening { border-color: var(--success); color: var(--success); box-shadow: 0 0 30px var(--success) inset; transform: scale(1.1); animation: none; background: rgba(0, 50, 0, 0.5); }
-        .invoke-btn.locked { border-color: #333; color: #333; background: black; cursor: not-allowed; transform: scale(0.9); animation: none; }
+        
+        /* ESTADO: LISTO (BLANCO) */
+        .invoke-btn.ready { 
+            border-color: white; color: white; 
+            background: rgba(255,255,255,0.15); 
+            box-shadow: 0 0 20px rgba(255,255,255,0.4);
+            cursor: pointer; 
+        }
+        .invoke-btn.ready:active { transform: scale(0.95); background: white; color: black; }
+        
+        /* ESTADO: ESCUCHANDO (VERDE) */
+        .invoke-btn.listening { 
+            border-color: var(--success); color: var(--success); 
+            box-shadow: 0 0 40px var(--success) inset; 
+            transform: scale(1.1); animation: none; background: rgba(0, 50, 0, 0.5);
+        }
+        
+        /* ESTADO: BLOQUEADO/PROCESANDO (GRIS) */
+        .invoke-btn.locked { 
+            border-color: #333; color: #333; background: black; 
+            cursor: not-allowed; transform: scale(0.9); animation: none; box-shadow: none;
+        }
 
         @keyframes pulseFast { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(0.95); } 100% { opacity: 1; transform: scale(1); } }
 
-        #spirit-text { position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%); width: 95%; text-align: center; font-family: 'Creepster'; font-size: 3rem; color: rgba(255, 255, 255, 0.95); text-shadow: 0 4px 15px black; pointer-events: none; z-index: 40; line-height: 1; transition: opacity 0.3s; }
+        #spirit-text { position: absolute; bottom: 160px; left: 50%; transform: translateX(-50%); width: 95%; text-align: center; font-family: 'Creepster'; font-size: 3rem; color: rgba(255, 255, 255, 0.95); text-shadow: 0 4px 15px black; pointer-events: none; z-index: 40; line-height: 1; transition: opacity 0.3s; }
         #invoke-label { font-size: 0.6rem; color: #666; margin-top: 10px; font-family: 'Share Tech Mono'; letter-spacing: 1px; height: 15px; }
-        
-        /* BOTON DICCIONARIO */
-        #btn-dictionary {
-            position: absolute; top: 25px; right: 20px; z-index: 60;
-            color: rgba(255, 255, 255, 0.4); font-size: 1.2rem; cursor: pointer;
-            display: none; /* Se muestra solo en spirit mode */
-        }
-        
-        /* LISTA DE PALABRAS (DICCIONARIO) */
-        .word-list {
-            max-height: 60vh; overflow-y: auto; text-align: left; font-size: 0.7rem; color: #aaa; font-family: 'Share Tech Mono';
-            display: grid; grid-template-columns: 1fr 1fr; gap: 5px;
-        }
-
-        #btn-disconnect { font-size: 0.7rem; color: #aaa; border: 1px solid #444; padding: 6px 12px; border-radius: 6px; background: rgba(20,20,20,0.9); }
+        #btn-disconnect { font-size: 0.7rem; color: #aaa; border: 1px solid #444; padding: 6px 12px; border-radius: 6px; background: rgba(20,20,20,0.9); pointer-events: auto; }
         #loading-spinner { display: none; width: 30px; height: 30px; border: 3px solid #333; border-top: 3px solid var(--primary); border-radius: 50%; animation: spin 1s infinite linear; margin: 10px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
+        /* AI FEEDBACK - DEBAJO DE LIVE */
+        #ai-feedback-overlay {
+            position: absolute; top: 25px; left: 5px; z-index: 45; text-align: left; pointer-events: none; display: none; max-width: 280px;
+        }
+        #ai-feedback-text {
+            font-family: 'Share Tech Mono'; font-size: 0.65rem; color: var(--hud-red);
+            text-shadow: 0 0 5px red; background: transparent; 
+            padding: 2px 4px; animation: glitchText 0.2s infinite; 
+            letter-spacing: 1px; text-transform: uppercase; white-space: nowrap;
+        }
+
     </style>
 </head>
-<body oncontextmenu="return false;" onselectstart="return false;">
+<body>
 
     <div id="bg-static"></div>
     <div id="bg-overlay"></div>
@@ -166,7 +158,7 @@
         <h1 class="text-3xl font-bold tracking-widest text-white mb-2">OBR LINK</h1>
         <p class="text-xs text-gray-400 font-mono mb-10">TERMINAL DE ENLACE</p>
         <button class="app-btn justify-center font-bold tracking-widest" onclick="startSystem()">INICIAR</button>
-        <p class="absolute bottom-6 text-[10px] text-gray-600">v33.2 ANTI-SELECT</p>
+        <p class="absolute bottom-6 text-[10px] text-gray-600">v34.0 REALISM</p>
     </div>
 
     <!-- 2. SCANNER -->
@@ -174,12 +166,7 @@
         <video id="scan-video" playsinline muted></video>
         <div class="scan-box"><div class="scan-line"></div></div>
         <div class="absolute top-12 bg-black/80 px-6 py-2 rounded-full border border-cyan-500 text-cyan-400 text-sm font-bold">ESCANEAR DETECTOR</div>
-        
-        <!-- BOTON DISCRETO OFFLINE -->
-        <div id="btn-offline-access" onclick="openAuthModal()">
-            <i class="fas fa-cog"></i>
-        </div>
-
+        <div id="btn-offline-access" onclick="openAuthModal()"><i class="fas fa-cog"></i></div>
         <button onclick="location.reload()" class="absolute bottom-12 text-red-500 text-xs font-bold border-b border-red-500">CANCELAR</button>
     </div>
 
@@ -199,7 +186,7 @@
     <div id="modal-api" class="modal-overlay" style="z-index: 5000;">
         <div class="modal-box">
             <h3 class="text-cyan-400 font-bold mb-2">CONFIGURAR IA (2.5)</h3>
-            <p class="text-[10px] text-gray-400 mb-4">Ingresa API Key para Gemini 2.5 Flash.</p>
+            <p class="text-[10px] text-gray-400 mb-4">Ingresa API Key de Gemini 2.5 Flash.</p>
             <input type="text" id="input-api-key" class="auth-input" placeholder="AIzaSy...">
             <div class="flex gap-2 mt-4">
                 <button onclick="document.getElementById('modal-api').classList.remove('active')" class="flex-1 py-3 bg-gray-800 text-xs text-white rounded">CERRAR</button>
@@ -210,14 +197,11 @@
 
     <!-- MODAL DICCIONARIO -->
     <div id="modal-dictionary" class="modal-overlay" style="z-index: 5000;">
-        <!-- MARGEN SUPERIOR AÑADIDO PARA BAJARLO (mt-24) -->
         <div class="modal-box mt-24" style="max-width: 500px;">
             <h3 class="text-green-400 font-bold mb-2 tracking-widest">BANCO DE PALABRAS</h3>
             <p class="text-[10px] text-gray-500 mb-4">Generado por IA desde Foto Semilla</p>
-            <div id="word-list-container" class="word-list border border-gray-800 p-2 rounded h-64 bg-black">
-                <!-- Words injected here -->
-            </div>
-            <button onclick="document.getElementById('modal-dictionary').classList.remove('active')" class="w-full mt-4 py-2 bg-gray-800 text-xs text-white rounded">CERRAR</button>
+            <div id="word-list-container" class="word-list border border-gray-800 p-2 rounded h-64 bg-black"></div>
+            <button onclick="document.getElementById('modal-dictionary').classList.remove('active')" class="w-full mt-4 py-2 bg-gray-800 text-xs text-white rounded-lg">CERRAR</button>
         </div>
     </div>
 
@@ -226,8 +210,6 @@
         <div class="text-center mb-8 relative w-full">
             <img src="obr-logo.png" class="w-20 mx-auto mb-2">
             <div id="menu-status" class="text-xs text-green-400 font-bold tracking-widest">CONECTADO</div>
-            
-            <!-- BOTON API SUPERIOR DERECHA -->
             <div id="btn-api-config" onclick="openApiSettings()"><i class="fas fa-cog"></i></div>
         </div>
 
@@ -236,11 +218,10 @@
             <div><div class="font-bold">MICRÓFONO PRO</div><div class="text-[10px] text-gray-300">Audio Puro</div></div>
         </div>
 
-        <!-- BOTON SPIRIT BOX (Con estado) -->
         <div id="btn-spirit" class="app-btn red locked" onclick="setMode('spirit')">
             <i class="fas fa-ghost text-2xl text-red-500"></i>
             <div>
-                <div class="font-bold">SPIRIT BOX AI</div>
+                <div class="font-bold">SPIRIT BOX</div>
                 <div id="spirit-status" class="btn-status-indicator text-red-300">
                     <i class="fas fa-lock"></i> SIN API
                 </div>
@@ -258,7 +239,7 @@
             <button id="btn-disconnect" onclick="logout()">SALIR</button>
         </div>
 
-        <!-- BOTON DICCIONARIO (Solo Spirit) -->
+        <!-- BOTON DICCIONARIO -->
         <div id="btn-dictionary" class="absolute top-20 right-5 opacity-50 cursor-pointer z-50 hidden" onclick="openDictionary()">
             <i class="fas fa-book text-white text-2xl"></i>
         </div>
@@ -282,7 +263,9 @@
             </div>
         </div>
         
+        <!-- VIDEO PARA IA (OCULTO) -->
         <video id="keep-alive-video" playsinline autoplay muted loop style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;"></video>
+        <!-- AUDIO FONDO (RUIDO BLANCO) -->
         <audio id="bg-noise" src="FONDO_1.mp3" loop></audio>
     </div>
 
@@ -292,20 +275,11 @@
             <h3 class="text-red-500 font-bold mb-2 font-creepy tracking-widest text-xl">CALIBRAR ENTORNO</h3>
             <p class="text-[10px] text-gray-400 mb-4">Toma una foto del lugar para generar el banco de palabras.</p>
             
-            <!-- VISOR DE CAMARA -->
-            <div class="relative w-full h-48 bg-black rounded-lg overflow-hidden mb-4 border border-gray-800 shadow-[0_0_20px_rgba(255,0,0,0.2)]">
-                <video id="seed-video" class="w-full h-full object-cover" autoplay playsinline muted></video>
-                <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-30">
-                    <div class="w-10 h-10 border-2 border-red-500 rounded-full"></div>
-                    <div class="absolute w-full h-[1px] bg-red-500"></div>
-                    <div class="absolute h-full w-[1px] bg-red-500"></div>
-                </div>
-            </div>
-            
-            <button onclick="captureAndAnalyze()" class="photo-btn">
-                <i class="fas fa-camera text-xl"></i>
-                <span>ESCANEAR AHORA</span>
-            </button>
+            <label class="photo-btn">
+                <i class="fas fa-camera text-2xl"></i>
+                <span>TOMAR FOTO</span>
+                <input type="file" accept="image/*" capture="environment" hidden onchange="processSeedPhoto(this)">
+            </label>
             
             <div id="loading-spinner"></div>
             <div id="photo-status" class="text-xs text-yellow-500 mt-2 h-4"></div>
@@ -327,6 +301,9 @@
 
     // 1. SYSTEM START
     async function startSystem() {
+        if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen().catch(e => console.log("Fullscreen error", e));
+        }
         try {
             stream = await navigator.mediaDevices.getUserMedia({ 
                 audio: {echoCancellation:true, noiseSuppression:true, autoGainControl:true}, 
@@ -342,6 +319,7 @@
             document.getElementById('scan-video').play();
             document.getElementById('cam-video-bg').play();
             
+            // GPS FX
             if('geolocation' in navigator) {
                 navigator.geolocation.watchPosition(p => {
                     const s = (p.coords.latitude * 10000) % 10;
@@ -349,9 +327,9 @@
                 }, null, {enableHighAccuracy:true});
             }
             
-            // Check API status on load (async)
             if(GEMINI_API_KEY) validateApiKey(GEMINI_API_KEY);
-            
+            else updateApiStatus(null);
+
             show('s-scan'); scanQR();
         } catch(e) { alert("Error Permisos: " + e.message); }
     }
@@ -364,7 +342,6 @@
             isStandalone = true;
             closeAuthModal();
             updateStatusUI(false);
-            if(GEMINI_API_KEY) validateApiKey(GEMINI_API_KEY);
             show('s-menu');
         } else alert("ACCESO DENEGADO");
     }
@@ -390,6 +367,7 @@
         peer.on('open', () => { 
             updateStatusUI(true); 
             if(GEMINI_API_KEY) validateApiKey(GEMINI_API_KEY);
+            else updateApiStatus(null);
             show('s-menu'); 
         });
         peer.on('error', () => { updateStatusUI(false); alert("Error Red"); location.reload(); });
@@ -420,49 +398,29 @@
     async function saveApiKey() {
         const key = document.getElementById('input-api-key').value.trim();
         if(key.length > 10) {
-            const btn = document.getElementById('btn-save-api');
-            const originalText = btn.innerText;
-            btn.innerText = "VERIFICANDO...";
-            btn.disabled = true;
+            // Guardar instantaneo
+            localStorage.setItem('obr_api_key_mic', key);
+            GEMINI_API_KEY = key;
+            document.getElementById('modal-api').classList.remove('active');
             
-            try {
-                const isValid = await validateApiKey(key, false);
-                btn.innerText = originalText;
-                btn.disabled = false;
-
-                if(isValid) {
-                    localStorage.setItem('obr_api_key_mic', key);
-                    GEMINI_API_KEY = key;
-                    document.getElementById('modal-api').classList.remove('active');
-                    alert("CONEXIÓN EXITOSA");
-                } else {
-                    alert("ERROR DE CONEXIÓN");
-                }
-            } catch (e) {
-                btn.innerText = originalText;
-                btn.disabled = false;
-                alert("ERROR DE RED");
-            }
+            // Validar en background
+            updateApiStatus(undefined); // Verificando...
+            validateApiKey(key);
         }
     }
     
-    async function validateApiKey(key, silent) {
-        if(!silent) updateApiStatus(undefined); 
-        
+    async function validateApiKey(key) {
         try {
-            // PING GEMINI 2.5
+            // POST Ping Gemini 2.5
             const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${key}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ contents: [{ parts: [{ text: "Ping" }] }] })
             });
             
-            const valid = response.ok;
-            updateApiStatus(valid);
-            return valid;
+            if(response.ok) updateApiStatus(true);
+            else updateApiStatus(false);
         } catch(e) {
             updateApiStatus(false);
-            return false;
         }
     }
     
@@ -483,11 +441,13 @@
             status.innerHTML = '<i class="fas fa-lock"></i> ERROR DE CONEXIÓN';
             status.style.color = "#ff3333";
         } else if (isValid === undefined) {
+             // Verificando
              btn.classList.add('locked');
              btn.onclick = null;
              status.innerHTML = '<i class="fas fa-sync fa-spin"></i> VERIFICANDO...';
              status.style.color = "#ffae00";
         } else {
+             // Null
              btn.classList.add('locked');
              btn.onclick = null;
              status.innerHTML = '<i class="fas fa-lock"></i> REQUIERE API KEY';
@@ -498,79 +458,62 @@
     // 4. MODE LOGIC
     function checkSpiritMode() {
         if(!document.getElementById('btn-spirit').classList.contains('locked')) {
-            openPhotoModal();
+            document.getElementById('modal-photo').classList.add('active');
         }
-    }
-
-    function openPhotoModal() {
-        const modal = document.getElementById('modal-photo');
-        const videoPreview = document.getElementById('seed-video');
-        if(stream) {
-            videoPreview.srcObject = stream;
-            videoPreview.play();
-        }
-        modal.classList.add('active');
     }
 
     function closePhotoModal() {
-        const modal = document.getElementById('modal-photo');
-        const videoPreview = document.getElementById('seed-video');
-        videoPreview.srcObject = null; 
-        modal.classList.remove('active');
+        document.getElementById('modal-photo').classList.remove('active');
     }
 
-    async function captureAndAnalyze() {
+    async function processSeedPhoto(input) {
+        const file = input.files[0];
+        if(!file) return;
+        
         const status = document.getElementById('photo-status');
         const spinner = document.getElementById('loading-spinner');
-        const videoPreview = document.getElementById('seed-video');
-        
-        if(!videoPreview.videoWidth) {
-            status.innerText = "ESPERA A LA CAMARA...";
-            return;
-        }
-
         status.innerText = "ANALIZANDO..."; spinner.style.display = 'block';
         
-        const cvs = document.createElement('canvas');
-        cvs.width = 640; cvs.height = 480;
-        cvs.getContext('2d').drawImage(videoPreview, 0, 0, 640, 480);
-        const b64 = cvs.toDataURL('image/jpeg', 0.6).split(',')[1];
-        
-        const apiCall = new Promise(async (resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            const b64 = e.target.result.split(',')[1];
+            
+            const apiCall = new Promise(async (resolve, reject) => {
+                try {
+                    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`, {
+                        method:'POST', headers:{'Content-Type':'application/json'},
+                        body:JSON.stringify({
+                            contents:[{parts:[{text: "Genera una lista de 50 PALABRAS SUELTAS en mayúsculas separadas por '|' sobre lo que ves en la imagen (muebles, luz, objetos) y palabras de terror."}, {inline_data:{mime_type:"image/jpeg",data:b64}}]}]
+                        })
+                    });
+                    const d = await r.json();
+                    const rawText = d.candidates?.[0]?.content?.parts?.[0]?.text || "";
+                    if(rawText) {
+                        spiritScript = rawText.split('|').map(s => s.trim()).filter(s => s.length > 2);
+                        isFallbackMode = false;
+                        resolve();
+                    } else reject("Empty");
+                } catch(e) { reject(e); }
+            });
+
+            const timeout = new Promise((_, reject) => setTimeout(() => reject("Timeout"), 5000));
+
             try {
-                const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`, {
-                    method:'POST', headers:{'Content-Type':'application/json'},
-                    body:JSON.stringify({
-                        contents:[{parts:[{text: "Genera una lista de 100 PALABRAS SUELTAS en mayúsculas separadas por '|' sobre lo que ves en la imagen (muebles, luz, objetos) y palabras de terror."}, {inline_data:{mime_type:"image/jpeg",data:b64}}]}]
-                    })
-                });
-                const d = await r.json();
-                const rawText = d.candidates?.[0]?.content?.parts?.[0]?.text || "";
-                if(rawText) {
-                    spiritScript = rawText.split('|').map(s => s.trim()).filter(s => s.length > 2);
-                    isFallbackMode = false;
-                    resolve();
-                } else reject("Empty");
-            } catch(e) { reject(e); }
-        });
-
-        const timeout = new Promise((_, reject) => setTimeout(() => reject("Timeout"), 5000));
-
-        try {
-            await Promise.race([apiCall, timeout]);
-            status.innerText = "LISTO";
-        } catch(e) {
-            console.log("Fallback Local");
-            spiritScript = ["VACÍO", "FRÍO", "AQUÍ", "DOLOR", "VEO", "ATRAS", "MUERTE", "AYUDA", "NO", "SI", "SOLO"];
-            isFallbackMode = true;
-            status.innerText = "MODO LOCAL";
-        } finally {
-            isCalibrated = true;
-            setTimeout(() => {
-                closePhotoModal();
-                setMode('spirit');
-            }, 1000);
-        }
+                await Promise.race([apiCall, timeout]);
+                status.innerText = "LISTO";
+            } catch(e) {
+                console.log("Fallback Local");
+                spiritScript = ["VACÍO", "FRÍO", "AQUÍ", "DOLOR", "VEO", "ATRAS", "MUERTE", "AYUDA", "NO", "SI", "SOLO", "SOMBRA", "LUZ", "PUERTA", "PISO"];
+                isFallbackMode = true;
+            } finally {
+                isCalibrated = true;
+                setTimeout(() => {
+                    document.getElementById('modal-photo').classList.remove('active');
+                    setMode('spirit');
+                }, 1000);
+            }
+        };
+        reader.readAsDataURL(file);
     }
 
     function openDictionary() {
@@ -610,7 +553,7 @@
             document.getElementById('bg-static').style.display = 'none';
             
             initSpeech();
-            bgAudio.volume = 0.4;
+            bgAudio.volume = 0.5; // Volumen base
             bgAudio.play().catch(()=>{});
             
             enableButton();
@@ -626,10 +569,9 @@
     function enableButton() {
         const btn = document.getElementById('invoke-btn');
         const label = document.getElementById('invoke-label');
+        btn.disabled = false; label.innerText = "PULSA PARA PREGUNTAR"; label.style.color="#fff";
+        // BLANCO = LISTO
         btn.className = 'invoke-btn ready';
-        btn.disabled = false;
-        label.innerText = "VÍNCULO ESTABLECIDO";
-        label.style.color = "#00ff41";
     }
 
     function startPassiveLoop() {
@@ -658,12 +600,15 @@
     function startListening() {
         if(isProcessing) return;
         clearInterval(autoSpiritInterval); 
-        document.getElementById('bg-noise').volume = 0.1; 
+        
+        // DUCKING: BAJAR VOLUMEN FONDO MIENTRAS ESCUCHA
+        document.getElementById('bg-noise').volume = 0.15; 
+        
         const btn = document.getElementById('invoke-btn');
-        btn.classList.remove('fallback', 'ready');
-        btn.classList.add('listening');
+        btn.className = 'invoke-btn listening'; // VERDE
         document.getElementById('invoke-label').innerText = "ESCUCHANDO...";
         document.getElementById('invoke-label').style.color = "#00ff41";
+        
         if(recognition) recognition.start();
         else triggerRealtimeAI("");
     }
@@ -671,8 +616,7 @@
     function stopListening() {
         if(recognition) recognition.stop();
         const btn = document.getElementById('invoke-btn');
-        btn.classList.remove('listening');
-        btn.classList.add('locked'); 
+        btn.className = 'invoke-btn locked'; // GRIS
         btn.disabled = true;         
         document.getElementById('invoke-label').innerText = "ANALIZANDO...";
         document.getElementById('invoke-label').style.color = "#ffae00";
@@ -686,14 +630,15 @@
 
         try {
             const cvs = document.createElement('canvas');
-            const vid = document.getElementById('keep-alive-video');
+            const vid = document.getElementById('cam-video-bg'); // Use active video (behind filters)
             cvs.width = 640; cvs.height = 480;
             cvs.getContext('2d').drawImage(vid, 0, 0, 640, 480);
             const b64 = cvs.toDataURL('image/jpeg', 0.5).split(',')[1];
 
+            // PROMPT HUMANO ESTRICTO
             const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`, {
                 method:'POST', headers:{'Content-Type':'application/json'},
-                body:JSON.stringify({contents:[{parts:[{text: `Rol: Espíritu. Pregunta: "${question}". Responde directo basándote en la imagen nueva. Max 4 palabras.`},{inline_data:{mime_type:"image/jpeg",data:b64}}]}]})
+                body:JSON.stringify({contents:[{parts:[{text: `Rol: Espíritu humano real. Pregunta: "${question}". Responde con UN NOMBRE COMÚN (ej: Pedro, Maria) o UN HECHO FÍSICO (ej: Dolor, Caída, Frio). Máximo 2 palabras. NADA POÉTICO.`},{inline_data:{mime_type:"image/jpeg",data:b64}}]}]})
             });
             
             const d = await r.json();
@@ -709,12 +654,9 @@
         
         setTimeout(() => { 
             isProcessing = false; 
-            document.getElementById('bg-noise').volume = 0.4; 
+            document.getElementById('bg-noise').volume = 0.4; // RESTAURAR VOLUMEN
             txt.style.opacity = 0;
-            const btn = document.getElementById('invoke-btn');
-            btn.classList.remove('locked');
-            btn.className = 'invoke-btn ready'; 
-            btn.disabled = false;
+            enableButton(); // Vuelve a blanco
             document.getElementById('invoke-label').innerText = "LISTO";
             startPassiveLoop();
         }, 4000); 
@@ -727,7 +669,7 @@
             if(!destNode) destNode = audioCtx.createMediaStreamDestination();
             if(!micNode) { micNode = audioCtx.createMediaStreamSource(stream); micNode.connect(destNode); }
             const callStream = destNode.stream;
-            if(stream.getVideoTracks().length>0) callStream.addTrack(stream.getVideoTracks()[0].clone());
+            // Pasar video fake o real si se pudiera, pero aqui solo audio
             peer.call(hostId, callStream);
         }
     }
@@ -735,10 +677,19 @@
     function speakWithEcho(text) {
         if('speechSynthesis' in window) {
             window.speechSynthesis.cancel();
-            const u1 = new SpeechSynthesisUtterance(text); u1.lang = 'es-ES'; u1.pitch = 0.5; u1.rate = 0.8;
-            const u2 = new SpeechSynthesisUtterance(text); u2.lang = 'es-ES'; u2.pitch = 0.3; u2.rate = 0.7; u2.volume = 0.6;
+            
+            // DUCKING PARA LA RESPUESTA
+            document.getElementById('bg-noise').volume = 0.1;
+            
+            const u1 = new SpeechSynthesisUtterance(text); u1.lang = 'es-ES'; u1.pitch = currentPitch; u1.rate = 0.8;
+            const u2 = new SpeechSynthesisUtterance(text); u2.lang = 'es-ES'; u2.pitch = currentPitch - 0.3; u2.rate = 0.7; u2.volume = 0.6;
             window.speechSynthesis.speak(u1);
             setTimeout(()=>window.speechSynthesis.speak(u2), 120);
+            
+            // RESTAURAR VOLUMEN DESPUES
+            setTimeout(() => {
+                 if(!isProcessing) document.getElementById('bg-noise').volume = 0.4;
+            }, 2000);
         }
     }
 
