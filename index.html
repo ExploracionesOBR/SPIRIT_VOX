@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#000000">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
-    <title>OBR LINK v35.1 ULTIMATE</title>
+    <title>OBR LINK v35.2 FINAL CORE</title>
     
     <!-- ICONO -->
     <link rel="apple-touch-icon" href="obr-logo.png">
@@ -21,7 +21,7 @@
     <style>
         :root { --primary: #00f3ff; --secondary: #ff0055; --success: #00ff41; --warn: #ffae00; }
         
-        /* RESET GLOBAL ANTI-SELECCION */
+        /* RESET GLOBAL ANTI-SELECCION (CRÍTICO PARA EVITAR PANTALLA AZUL) */
         * {
             -webkit-tap-highlight-color: transparent;
             -webkit-touch-callout: none;
@@ -36,7 +36,7 @@
             color: var(--primary); font-family: 'Orbitron', sans-serif;
             overflow: hidden; width: 100vw; height: 100dvh;
             margin: 0; padding: 0; position: fixed; top: 0; left: 0;
-            touch-action: none; /* Bloquea gestos */
+            touch-action: none; /* Bloquea gestos del navegador */
         }
 
         /* FORZAR VERTICAL (Anti-Giro) */
@@ -116,29 +116,51 @@
         .dot.offline { background: var(--secondary); box-shadow: 0 0 10px var(--secondary); }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
-        /* INVOKE BUTTON */
+        /* INVOKE BUTTON - REFORZADO */
         .invoke-container { position: absolute; bottom: 40px; left: 0; width: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 50; }
-        .invoke-btn { width: 90px; height: 90px; border-radius: 50%; border: 2px solid #555; background: rgba(0,0,0,0.8); color: #555; font-size: 2.5rem; display: flex; align-items: center; justify-content: center; transition: 0.3s; backdrop-filter: blur(4px); cursor: not-allowed; -webkit-user-select: none; user-select: none; touch-action: none; }
+        .invoke-btn { 
+            width: 90px; height: 90px; border-radius: 50%; border: 2px solid #555; 
+            background: rgba(0,0,0,0.8); color: #555; font-size: 2.5rem; 
+            display: flex; align-items: center; justify-content: center; 
+            transition: 0.1s; backdrop-filter: blur(4px); cursor: not-allowed;
+            -webkit-user-select: none; user-select: none; touch-action: none; 
+        }
         
         /* ESTADOS SEMÁFORO */
-        .invoke-btn.ready { border-color: rgba(255,255,255,0.9); color: white; cursor: pointer; background: rgba(255,255,255,0.15); box-shadow: 0 0 15px rgba(255,255,255,0.2); }
+        .invoke-btn.ready { /* BLANCO */
+            border-color: rgba(255,255,255,0.9); color: white; 
+            cursor: pointer; background: rgba(255,255,255,0.15); 
+            box-shadow: 0 0 20px rgba(255,255,255,0.2);
+        }
         .invoke-btn.ready:active { transform: scale(0.95); background: rgba(255,255,255,0.3); }
 
-        .invoke-btn.listening { border-color: var(--success); color: var(--success); box-shadow: 0 0 30px var(--success) inset; transform: scale(1.1); animation: none; background: rgba(0, 50, 0, 0.5); }
+        .invoke-btn.listening { /* VERDE */
+            border-color: var(--success); color: var(--success); 
+            box-shadow: 0 0 40px var(--success) inset; 
+            transform: scale(1.1); animation: none; background: rgba(0, 50, 0, 0.5);
+        }
         
-        .invoke-btn.locked { border-color: var(--warn); color: var(--warn); background: black; cursor: not-allowed; transform: scale(0.9); animation: pulseWarn 1.5s infinite; box-shadow: none; pointer-events: none; }
+        .invoke-btn.locked { /* NARANJA/GRIS OSCURO */
+            border-color: var(--warn); color: var(--warn); 
+            background: #1a1a1a; cursor: not-allowed; transform: scale(0.9); 
+            animation: pulseWarn 1s infinite; box-shadow: none; pointer-events: none;
+        }
         
         /* VERDE PULSOS = CARGA EXITOSA */
-        .invoke-btn.success { border-color: var(--success); color: var(--success); background: rgba(0, 50, 0, 0.8); animation: pulseSuccess 0.2s ease 2; }
+        .invoke-btn.success {
+            border-color: var(--success); color: var(--success);
+            background: rgba(0, 50, 0, 0.8);
+            animation: pulseSuccess 0.2s ease 2;
+        }
 
         @keyframes pulseWarn { 0% { opacity: 0.6; box-shadow: 0 0 5px var(--warn); } 50% { opacity: 1; box-shadow: 0 0 15px var(--warn); } 100% { opacity: 0.6; box-shadow: 0 0 5px var(--warn); } }
         @keyframes pulseSuccess { 0% { transform: scale(1); box-shadow: 0 0 10px var(--success); } 50% { transform: scale(1.2); box-shadow: 0 0 30px var(--success); } 100% { transform: scale(1); box-shadow: 0 0 10px var(--success); } }
 
-        /* TEXTO ESPIRITU - MAS PEQUEÑO */
+        /* TEXTO ESPIRITU - MAS PEQUEÑO Y ABAJO */
         #spirit-text { 
             position: absolute; bottom: 150px; left: 50%; transform: translateX(-50%); 
             width: 90%; text-align: center; 
-            font-family: 'Creepster'; font-size: 1.5rem; 
+            font-family: 'Creepster'; font-size: 1.5rem; /* REDUCIDO */
             color: rgba(255, 255, 255, 0.95); 
             text-shadow: 0 4px 10px black; pointer-events: none; z-index: 40; 
             line-height: 1.2; transition: opacity 0.3s; 
@@ -146,20 +168,20 @@
 
         #invoke-label { font-size: 0.6rem; color: #666; margin-top: 15px; font-family: 'Share Tech Mono'; letter-spacing: 1px; height: 15px; text-transform: uppercase; }
         
-        /* BOTON DICCIONARIO (BAJADO) */
+        /* BOTON DICCIONARIO */
         #btn-dictionary {
             position: absolute; top: 100px; right: 20px; z-index: 60;
             color: rgba(255, 255, 255, 0.6); font-size: 1.2rem; cursor: pointer;
             display: none; padding: 10px; background: rgba(0,0,0,0.5); border-radius: 50%;
         }
 
-        /* LISTA PALABRAS (VISIBLES) */
+        /* LISTA PALABRAS (VISIBLES - CIAN/BLANCO) */
         .word-list { 
             max-height: 60vh; overflow-y: auto; text-align: left; 
-            font-size: 0.8rem; color: var(--primary); font-family: 'Share Tech Mono'; 
+            font-size: 0.8rem; color: white; font-family: 'Share Tech Mono'; 
             display: grid; grid-template-columns: 1fr 1fr; gap: 8px; 
         }
-        .word-item { background: rgba(0, 50, 50, 0.5); padding: 8px; border-left: 2px solid var(--primary); color: white; }
+        .word-item { background: rgba(0, 50, 50, 0.6); padding: 8px; border-left: 3px solid var(--primary); color: var(--primary); font-weight: bold; }
 
         #btn-disconnect { font-size: 0.7rem; color: #aaa; border: 1px solid #444; padding: 6px 12px; border-radius: 6px; background: rgba(20,20,20,0.9); font-weight: bold; }
         #loading-spinner { display: none; width: 30px; height: 30px; border: 3px solid #333; border-top: 3px solid var(--primary); border-radius: 50%; animation: spin 1s infinite linear; margin: 10px auto; }
@@ -334,7 +356,7 @@
     let autoSpiritInterval;
     let isStandalone = false;
     let currentPitch = 0.5; let currentRate = 0.8;
-    // BANCO INICIAL PREDETERMINADO PARA QUE NO ESTE VACIO
+    // BANCO INICIAL SEGURO
     let spiritScript = ["VACÍO", "FRÍO", "AQUÍ", "DOLOR", "VEO", "ATRAS", "MUERTE", "AYUDA", "NO", "SI", "SOLO", "SOMBRA"];
     let isCalibrated = false;
     let isFallbackMode = false;
@@ -508,6 +530,7 @@
                 const d = await r.json();
                 const rawText = d.candidates?.[0]?.content?.parts?.[0]?.text || "";
                 if(rawText) {
+                    // LIMPIEZA ESTRICTA
                     spiritScript = rawText.split('|').map(s => s.trim().replace(/[^a-zA-ZÀ-ÿ0-9 ]/g, '')).filter(s => s.length > 2);
                     isFallbackMode = false; resolve();
                 } else reject("Empty");
@@ -521,11 +544,12 @@
             status.innerText = "LISTO";
         } catch(e) {
             console.log("Fallback Local");
-            // Ya tiene valores por defecto
+            // Usar banco de seguridad
+            spiritScript = ["VACÍO", "FRÍO", "AQUÍ", "DOLOR", "VEO", "ATRAS", "MUERTE", "AYUDA", "NO", "SI", "SOLO", "SOMBRA"];
             isFallbackMode = true;
         } finally {
             isCalibrated = true;
-            populateDictionary(); // Actualizar visual
+            populateDictionary(); // LLENAR EL MODAL
             setTimeout(() => {
                 closePhotoModal();
                 setMode('spirit');
@@ -576,7 +600,7 @@
             bgAudio.volume = 1.0; 
             bgAudio.play().catch(()=>{});
             
-            triggerGreenPulse(); // Success Animation
+            triggerGreenPulse(); 
             enableButton();
             startPassiveLoop();
             
@@ -602,8 +626,9 @@
 
     function startPassiveLoop() {
         clearInterval(autoSpiritInterval);
-        // LOOP CADA 4-8 SEGUNDOS
+        // LOOP PASIVO CADA 4-8s
         autoSpiritInterval = setInterval(() => {
+            // Solo si no estamos grabando
             if(!isProcessing && document.getElementById('s-live').style.display === 'flex') {
                 triggerRandomWord();
             }
@@ -616,7 +641,7 @@
         playEVPNoise();
         const txt = document.getElementById('spirit-text');
         txt.innerText = word.toUpperCase(); txt.style.opacity = 1;
-        speakWithEcho(word); // AHORA HABLA
+        speakWithEcho(word);
         setTimeout(()=> txt.style.opacity=0, 3000);
     }
 
@@ -629,11 +654,9 @@
     }
 
     function startListening() {
-        if(isProcessing) return; // BLOCK
+        if(isProcessing) return;
         isProcessing = true;
         clearInterval(autoSpiritInterval); 
-        
-        // DUCKING
         document.getElementById('bg-noise').volume = 0.2; 
         
         const btn = document.getElementById('invoke-btn');
@@ -648,14 +671,15 @@
     function stopListening() {
         if(recognition) recognition.stop();
         const btn = document.getElementById('invoke-btn');
-        btn.classList.remove('listening'); btn.classList.add('locked'); btn.disabled = true;         
+        btn.classList.remove('listening'); btn.classList.add('locked'); 
+        btn.disabled = true;         
         document.getElementById('invoke-label').innerText = "ANALIZANDO...";
         document.getElementById('invoke-label').style.color = "#ffae00";
         
-        // TIMEOUT SEGURIDAD 2s (FIX COLGADO)
+        // TIMEOUT SEGURIDAD 2s (Si no hay respuesta IA)
         speechTimeout = setTimeout(() => {
-            if(document.getElementById('spirit-text').innerText === "" || document.getElementById('spirit-text').style.opacity === '0') {
-                triggerRandomWord(); 
+            if(document.getElementById('spirit-text').innerText === "..." || document.getElementById('spirit-text').style.opacity === '0') {
+                triggerRandomWord(); // Lanzar palabra random para no quedar mudo
                 resetUIState();
             }
         }, 2000);
@@ -666,7 +690,6 @@
         const txt = document.getElementById('spirit-text');
         txt.innerText = "..."; txt.style.opacity = 1;
 
-        // Validar si hubo audio
         if(!question || question.length < 2) {
              triggerRandomWord(); resetUIState(); return;
         }
@@ -723,7 +746,6 @@
     function speakWithEcho(text) {
         if('speechSynthesis' in window) {
             window.speechSynthesis.cancel();
-            // Ducking
             document.getElementById('bg-noise').volume = 0.2;
             const u1 = new SpeechSynthesisUtterance(text); u1.lang = 'es-ES'; u1.pitch = currentPitch; u1.rate = 0.8;
             const u2 = new SpeechSynthesisUtterance(text); u2.lang = 'es-ES'; u2.pitch = currentPitch - 0.3; u2.rate = 0.7; u2.volume = 0.6;
