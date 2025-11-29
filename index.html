@@ -2,14 +2,16 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <!-- VIEWPORT OPTIMIZADO -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
-    <title>OBR LINK v35.4 AUDIO FIX</title>
+    <title>OBR LINK v36.0 AUDIO CORE</title>
     
+    <!-- ICONO -->
     <link rel="apple-touch-icon" href="obr-logo.png">
     <link rel="icon" type="image/png" href="obr-logo.png">
     
@@ -34,8 +36,10 @@
         html, body {
             background-color: #000;
             color: var(--primary); font-family: 'Orbitron', sans-serif;
-            overflow: hidden; width: 100vw; height: 100dvh;
-            margin: 0; padding: 0; position: fixed; top: 0; left: 0;
+            height: 100dvh; width: 100vw;
+            margin: 0; padding: 0; 
+            position: fixed; top: 0; left: 0;
+            overflow: hidden;
             touch-action: none;
         }
 
@@ -116,36 +120,88 @@
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
         .invoke-container { position: absolute; bottom: 40px; left: 0; width: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 50; }
-        .invoke-btn { width: 90px; height: 90px; border-radius: 50%; border: 3px solid #555; background: rgba(20,20,20,0.9); color: #555; font-size: 2.5rem; display: flex; align-items: center; justify-content: center; transition: 0.2s; backdrop-filter: blur(4px); cursor: not-allowed; -webkit-user-select: none; user-select: none; touch-action: none; }
         
-        .invoke-btn.ready { border-color: white; color: white; cursor: pointer; background: rgba(255,255,255,0.15); box-shadow: 0 0 20px rgba(255,255,255,0.2); }
+        /* BOTON HUELLA */
+        .invoke-btn { 
+            width: 90px; height: 90px; border-radius: 50%; border: 3px solid #555; 
+            background: rgba(20,20,20,0.9); color: #555; font-size: 2.5rem; 
+            display: flex; align-items: center; justify-content: center; 
+            transition: 0.2s; backdrop-filter: blur(4px); cursor: not-allowed;
+            -webkit-user-select: none; user-select: none; touch-action: none;
+        }
+        
+        /* ESTADOS */
+        .invoke-btn.ready { /* BLANCO */
+            border-color: rgba(255,255,255,0.9); color: white; 
+            cursor: pointer; background: rgba(255,255,255,0.15); 
+            box-shadow: 0 0 20px rgba(255,255,255,0.2);
+        }
         .invoke-btn.ready:active { transform: scale(0.95); background: rgba(255,255,255,0.3); }
 
-        .invoke-btn.listening { border-color: var(--success); color: var(--success); box-shadow: 0 0 40px var(--success) inset; transform: scale(1.1); animation: none; background: rgba(0, 50, 0, 0.8); }
-        .invoke-btn.locked { border-color: var(--warn); color: var(--warn); background: black; cursor: not-allowed; transform: scale(0.95); animation: pulseWarn 1s infinite; box-shadow: none; pointer-events: none; }
-        .invoke-btn.success { border-color: var(--success); color: var(--success); background: rgba(0, 50, 0, 0.8); animation: pulseSuccess 0.2s ease 2; }
+        .invoke-btn.listening { /* VERDE */
+            border-color: var(--success); color: var(--success); 
+            box-shadow: 0 0 40px var(--success) inset; 
+            transform: scale(1.1); animation: none; background: rgba(0, 50, 0, 0.8);
+        }
+        
+        .invoke-btn.locked { /* NARANJA/GRIS OSCURO */
+            border-color: var(--warn); color: var(--warn); 
+            background: black; cursor: not-allowed; transform: scale(0.95); 
+            animation: pulseWarn 1s infinite; box-shadow: none; pointer-events: none;
+        }
+        
+        .invoke-btn.success { /* VERDE PULSOS */
+            border-color: var(--success); color: var(--success);
+            background: rgba(0, 50, 0, 0.8);
+            animation: pulseSuccess 0.3s ease 2;
+        }
 
         @keyframes pulseWarn { 0% { opacity: 0.6; box-shadow: 0 0 5px var(--warn); } 50% { opacity: 1; box-shadow: 0 0 15px var(--warn); } 100% { opacity: 0.6; box-shadow: 0 0 5px var(--warn); } }
         @keyframes pulseSuccess { 0% { transform: scale(1); box-shadow: 0 0 10px var(--success); } 50% { transform: scale(1.2); box-shadow: 0 0 30px var(--success); } 100% { transform: scale(1); box-shadow: 0 0 10px var(--success); } }
 
-        #spirit-text { position: absolute; bottom: 150px; left: 50%; transform: translateX(-50%); width: 90%; text-align: center; font-family: 'Creepster'; font-size: 1.5rem; color: rgba(255, 255, 255, 0.95); text-shadow: 0 4px 10px black; pointer-events: none; z-index: 40; line-height: 1.2; transition: opacity 0.3s; }
-        #invoke-label { font-size: 0.6rem; color: #666; margin-top: 15px; font-family: 'Share Tech Mono'; letter-spacing: 1px; height: 15px; text-transform: uppercase; }
-        
-        #btn-dictionary {
-            position: absolute; top: 100px; right: 20px; z-index: 60;
-            color: rgba(255, 255, 255, 0.6); font-size: 1.2rem; cursor: pointer;
-            display: none; padding: 10px; background: rgba(0,0,0,0.5); border-radius: 50%;
+        /* TEXTO ESPIRITU */
+        #spirit-text { 
+            position: absolute; bottom: 160px; left: 50%; transform: translateX(-50%); 
+            width: 90%; text-align: center; 
+            font-family: 'Creepster'; font-size: 1.4rem; color: rgba(255, 255, 255, 0.95); 
+            text-shadow: 0 4px 10px black; pointer-events: none; z-index: 40; 
+            line-height: 1.2; transition: opacity 0.3s; 
         }
 
-        .word-list { max-height: 60vh; overflow-y: auto; text-align: left; font-size: 0.8rem; color: #fff; font-family: 'Share Tech Mono'; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        #invoke-label { font-size: 0.6rem; color: #666; margin-top: 15px; font-family: 'Share Tech Mono'; letter-spacing: 1px; height: 15px; text-transform: uppercase; }
+        
+        /* BOTON DICCIONARIO */
+        #btn-dictionary {
+            position: absolute; top: 160px; right: 20px; z-index: 60;
+            color: rgba(255, 255, 255, 0.5); font-size: 1.5rem; cursor: pointer;
+            display: none; padding: 10px; background: rgba(0,0,0,0.6); border-radius: 50%;
+        }
+        #btn-dictionary.loading { color: var(--warn); border: 1px solid var(--warn); animation: pulse 1s infinite; }
+        #btn-dictionary.success { color: var(--success); border: 1px solid var(--success); animation: successPulse 0.5s ease 2; }
+        @keyframes successPulse { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+
+        .word-list { 
+            max-height: 60vh; overflow-y: auto; text-align: left; 
+            font-size: 0.85rem; color: #fff; font-family: 'Share Tech Mono'; 
+            display: grid; grid-template-columns: 1fr 1fr; gap: 8px; 
+        }
         .word-item { background: rgba(0, 0, 0, 0.8); padding: 8px; border-left: 3px solid var(--primary); color: var(--primary); font-weight: bold; text-transform: uppercase; }
 
         #btn-disconnect { font-size: 0.7rem; color: #aaa; border: 1px solid #444; padding: 6px 12px; border-radius: 6px; background: rgba(20,20,20,0.9); font-weight: bold; }
         #loading-spinner { display: none; width: 30px; height: 30px; border: 3px solid #333; border-top: 3px solid var(--primary); border-radius: 50%; animation: spin 1s infinite linear; margin: 10px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        #ai-feedback-overlay { position: absolute; top: 25px; left: 5px; z-index: 45; text-align: left; pointer-events: none; display: none; max-width: 280px; }
-        #ai-feedback-text { font-family: 'Share Tech Mono'; font-size: 0.65rem; color: var(--hud-red); text-shadow: 0 0 5px red; background: transparent; padding: 2px 4px; border-left: 2px solid var(--hud-red); animation: glitchText 0.2s infinite; letter-spacing: 1px; text-transform: uppercase; white-space: nowrap; }
+        /* AI FEEDBACK */
+        #ai-feedback-overlay {
+            position: absolute; top: 25px; left: 5px; z-index: 45; text-align: left; pointer-events: none; display: none; max-width: 280px;
+        }
+        #ai-feedback-text {
+            font-family: 'Share Tech Mono'; font-size: 0.65rem; color: var(--hud-red);
+            text-shadow: 0 0 5px red; background: transparent; padding: 2px 4px;
+            border-left: 2px solid var(--hud-red);
+            animation: glitchText 0.2s infinite; letter-spacing: 1px; text-transform: uppercase;
+            white-space: nowrap;
+        }
         @keyframes glitchText { 0% { transform: translate(0); } 20% { transform: translate(-1px, 1px); } 40% { transform: translate(1px, -1px); } 60% { transform: translate(-1px, -1px); } 80% { transform: translate(1px, 1px); } 100% { transform: translate(0); } }
 
     </style>
@@ -157,16 +213,16 @@
     <video id="cam-video-bg" playsinline autoplay muted loop></video>
     <div id="cam-filter-layer"></div>
 
-    <!-- LOGIN -->
+    <!-- 1. LOGIN -->
     <div id="s-login" class="screen active">
         <img src="obr-logo.png" class="w-32 mb-6 animate-pulse drop-shadow-[0_0_15px_rgba(0,243,255,0.5)]">
         <h1 class="text-3xl font-bold tracking-widest text-white mb-2">OBR LINK</h1>
         <p class="text-xs text-gray-400 font-mono mb-10">TERMINAL DE ENLACE</p>
         <button class="app-btn justify-center font-bold tracking-widest" onclick="startSystem()">INICIAR</button>
-        <p class="absolute bottom-6 text-[10px] text-gray-600">v35.2 FINAL CORE</p>
+        <p class="absolute bottom-6 text-[10px] text-gray-600">v36.0 AUDIO CORE</p>
     </div>
 
-    <!-- SCANNER -->
+    <!-- 2. SCANNER -->
     <div id="s-scan" class="screen">
         <video id="scan-video" playsinline muted></video>
         <div class="scan-box"><div class="scan-line"></div></div>
@@ -175,7 +231,7 @@
         <button onclick="location.reload()" class="absolute bottom-12 text-red-500 text-xs font-bold border-b border-red-500 pb-1">CANCELAR</button>
     </div>
 
-    <!-- AUTH MODAL -->
+    <!-- MODAL OFFLINE -->
     <div id="modal-auth" class="modal-overlay">
         <div class="modal-box">
             <h3 class="text-white font-bold mb-2">MODO SOLITARIO</h3>
@@ -187,7 +243,7 @@
         </div>
     </div>
 
-    <!-- API MODAL -->
+    <!-- MODAL API CONFIG -->
     <div id="modal-api" class="modal-overlay" style="z-index: 5000;">
         <div class="modal-box">
             <h3 class="text-cyan-400 font-bold mb-4 tracking-widest">IA CONFIG</h3>
@@ -201,26 +257,29 @@
         </div>
     </div>
 
-    <!-- DICTIONARY MODAL -->
+    <!-- MODAL DICCIONARIO -->
     <div id="modal-dictionary" class="modal-overlay" style="z-index: 5000;">
         <div class="modal-box mt-24" style="max-width: 500px;">
             <h3 class="text-green-400 font-bold mb-4 tracking-widest">BANCO DE PALABRAS</h3>
+            <p class="text-[10px] text-gray-500 mb-4">Vocabulario activo de la entidad:</p>
             <div id="word-list-container" class="word-list border border-gray-800 p-2 rounded h-64 bg-black overflow-y-auto"></div>
             <button onclick="document.getElementById('modal-dictionary').classList.remove('active')" class="w-full mt-4 py-3 bg-gray-800 text-xs text-white rounded-lg font-bold">CERRAR</button>
         </div>
     </div>
 
-    <!-- MENU -->
+    <!-- 3. MENU -->
     <div id="s-menu" class="screen">
         <div class="text-center mb-10 relative w-full">
             <img src="obr-logo.png" class="w-24 mx-auto mb-3">
-            <div id="menu-status" class="text-xs text-green-400 font-bold tracking-[3px] border border-green-900 px-3 py-1 rounded-full inline-block bg-green-900/20">CONECTADO</div>
+            <div id="menu-status" class="text-[10px] text-green-400 font-bold tracking-[3px] border border-green-900 px-3 py-1 rounded-full inline-block bg-green-900/20">CONECTADO</div>
             <div id="btn-api-config" onclick="openApiSettings()"><i class="fas fa-cog"></i></div>
         </div>
+
         <div class="app-btn" onclick="setMode('mic')">
             <i class="fas fa-microphone-lines text-2xl text-cyan-400"></i>
             <div><div class="font-bold text-sm">MICRÓFONO PRO</div><div class="text-[10px] text-gray-400">Audio Puro</div></div>
         </div>
+
         <div id="btn-spirit" class="app-btn red locked" onclick="setMode('spirit')">
             <i class="fas fa-ghost text-2xl text-red-500"></i>
             <div>
@@ -232,7 +291,7 @@
         </div>
     </div>
 
-    <!-- LIVE -->
+    <!-- 4. LIVE INTERFACE -->
     <div id="s-live" class="screen">
         <div class="status-bar">
             <div class="status-indicator">
@@ -241,13 +300,15 @@
             </div>
             <button id="btn-disconnect" onclick="logout()">SALIR</button>
         </div>
+
         <div id="btn-dictionary" onclick="openDictionary()"><i class="fas fa-book"></i></div>
+
+        <!-- UI MIC -->
         <div id="ui-mic" class="hidden flex flex-col items-center justify-center h-full w-full">
-            <div class="w-48 h-48 rounded-full border-4 border-cyan-500 flex items-center justify-center bg-cyan-500/10 shadow-[0_0_80px_rgba(0,243,255,0.4)] animate-pulse">
-                <i class="fas fa-microphone text-7xl text-cyan-400"></i>
-            </div>
-            <p class="mt-8 text-cyan-300 text-sm font-mono tracking-widest">TRANSMITIENDO AUDIO</p>
+             <!-- Limpio -->
         </div>
+
+        <!-- UI SPIRIT -->
         <div id="ui-spirit" class="hidden w-full h-full relative">
             <div id="spirit-text"></div>
             <div class="invoke-container">
@@ -257,50 +318,62 @@
                 <div id="invoke-label">INICIANDO...</div>
             </div>
         </div>
+        
         <video id="keep-alive-video" playsinline autoplay muted loop style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;"></video>
-        <audio id="bg-noise" src="FONDO_1.mp3" loop></audio>
+        
+        <!-- ELEMENTO DE AUDIO DE FONDO -->
+        <!-- No autoplay aqui, se activa en JS -->
     </div>
 
-    <!-- FOTO SEMILLA -->
+    <!-- MODAL FOTO SEMILLA -->
     <div id="modal-photo" class="modal-overlay" style="z-index: 3000;">
         <div class="modal-box">
             <h3 class="text-red-500 font-bold mb-2 font-creepy tracking-widest text-xl">CALIBRAR ENTORNO</h3>
             <p class="text-[10px] text-gray-400 mb-4">Toma una foto del lugar para generar el banco de palabras.</p>
+            
             <div class="cam-preview-box" style="width:100%; height:200px; background:#000; border:1px solid #333; margin-bottom:15px; border-radius:10px; overflow:hidden; position:relative;">
                 <video id="seed-video" autoplay playsinline muted style="width:100%; height:100%; object-fit:cover;"></video>
                 <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-30">
                     <div class="w-10 h-10 border-2 border-red-500 rounded-full"></div>
+                    <div class="absolute w-full h-[1px] bg-red-500"></div>
+                    <div class="absolute h-full w-[1px] bg-red-500"></div>
                 </div>
             </div>
+            
             <div class="photo-btn" onclick="captureAndAnalyze()">
                 <i class="fas fa-camera text-2xl"></i>
                 <span>ESCANEAR AHORA</span>
             </div>
+            
             <div id="loading-spinner"></div>
             <div id="photo-status" class="text-xs text-yellow-500 mt-2 h-4 text-center font-mono"></div>
+
             <button onclick="closePhotoModal()" class="mt-4 text-xs text-gray-500 underline">CANCELAR</button>
         </div>
     </div>
 
 <script>
     let GEMINI_API_KEY = localStorage.getItem('obr_api_key_mic') || "";
-    let stream, peer, conn, hostId, audioCtx, micNode, destNode;
+    let stream, peer, conn, hostId;
+    // AUDIO CONTEXT PARA RUTEO AVANZADO
+    let audioCtx, destNode, micSource, micGainNode, bgSourceNode, bgGainNode;
+    
     let recognition, isProcessing=false;
     let autoSpiritInterval;
     let isStandalone = false;
     let currentPitch = 0.5; let currentRate = 0.8;
-    // BANCO DE RESPALDO (SIEMPRE DISPONIBLE)
+    // BANCO DE RESPALDO
     let spiritScript = ["VACÍO", "FRÍO", "AQUÍ", "DOLOR", "VEO", "ATRAS", "MUERTE", "AYUDA", "NO", "SI", "SOLO", "SOMBRA"];
     let isCalibrated = false;
     let isFallbackMode = false;
     let speechTimeout; 
 
-    // 1. START SYSTEM
+    // 1. SYSTEM START
     async function startSystem() {
-        if (document.documentElement.requestFullscreen) {
-            document.documentElement.requestFullscreen().catch(e => console.log("Fullscreen error", e));
-        }
+        if(document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(()=>{});
+        
         try {
+            // Pedir Audio y Video
             stream = await navigator.mediaDevices.getUserMedia({ 
                 audio: {echoCancellation:true, noiseSuppression:true, autoGainControl:true}, 
                 video: {facingMode: { exact: "environment" }, width:{ideal:1280}, height:{ideal:720}} 
@@ -308,6 +381,7 @@
                 return await navigator.mediaDevices.getUserMedia({ audio: true, video: {facingMode: "environment"} });
             });
 
+            // Configurar Videos
             document.getElementById('scan-video').srcObject = stream;
             document.getElementById('cam-video-bg').srcObject = stream;
             document.getElementById('keep-alive-video').srcObject = stream;
@@ -316,6 +390,9 @@
             document.getElementById('scan-video').play();
             document.getElementById('cam-video-bg').play();
             
+            // Inicializar Audio Context para ruteo
+            initAudioContext();
+
             if('geolocation' in navigator) {
                 navigator.geolocation.watchPosition(p => {
                     const s = (p.coords.latitude * 10000) % 10;
@@ -330,12 +407,52 @@
         } catch(e) { alert("Error Permisos: " + e.message); }
     }
 
+    // --- AUDIO CONTEXT SETUP (NUEVO CORE) ---
+    function initAudioContext() {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+        
+        // Nodo Destino para PeerJS (lo que se envia al detector)
+        destNode = audioCtx.createMediaStreamDestination();
+        
+        // 1. Configurar Microfono
+        // Usamos el stream de audio que ya pedimos
+        micSource = audioCtx.createMediaStreamSource(stream);
+        micGainNode = audioCtx.createGain();
+        micGainNode.gain.value = 0; // MUTEADO POR DEFECTO
+        
+        // Ruteo Mic: Mic -> Gain -> Destino (Peer)
+        micSource.connect(micGainNode);
+        micGainNode.connect(destNode);
+        
+        // 2. Configurar Fondo (Spirit Box)
+        // Creamos el elemento de audio dinamicamente para control total
+        const bgAudioEl = new Audio('FONDO_1.mp3');
+        bgAudioEl.loop = true;
+        bgAudioEl.crossOrigin = "anonymous";
+        
+        bgSourceNode = audioCtx.createMediaElementSource(bgAudioEl);
+        bgGainNode = audioCtx.createGain();
+        bgGainNode.gain.value = 1.0; // Volumen Maximo
+        
+        // Ruteo Fondo: Fondo -> Gain -> Destino (Peer) Y Altavoz Local
+        bgSourceNode.connect(bgGainNode);
+        bgGainNode.connect(destNode); // Enviar al detector
+        bgGainNode.connect(audioCtx.destination); // Escuchar en celular
+        
+        // Guardar referencia para play/pause
+        window.bgAudioElement = bgAudioEl;
+    }
+
     // 2. AUTH & QR
     function openAuthModal() { document.getElementById('modal-auth').classList.add('active'); }
     function closeAuthModal() { document.getElementById('modal-auth').classList.remove('active'); }
     function checkAuth() {
         if(document.getElementById('auth-pass').value === "OBR1995@") {
-            isStandalone = true; closeAuthModal(); updateStatusUI(false); show('s-menu');
+            isStandalone = true;
+            closeAuthModal();
+            updateStatusUI(false);
+            show('s-menu');
         } else alert("ACCESO DENEGADO");
     }
 
@@ -354,33 +471,59 @@
     }
 
     function link(id) {
-        hostId = id; isStandalone = false; peer = new Peer();
-        peer.on('open', () => { updateStatusUI(true); if(GEMINI_API_KEY) validateApiKey(GEMINI_API_KEY); else updateApiStatus(null); show('s-menu'); });
+        hostId = id; isStandalone = false;
+        peer = new Peer();
+        peer.on('open', () => { 
+            updateStatusUI(true); 
+            if(GEMINI_API_KEY) validateApiKey(GEMINI_API_KEY);
+            else updateApiStatus(null);
+            show('s-menu'); 
+        });
         peer.on('error', () => { updateStatusUI(false); alert("Error Red"); location.reload(); });
         peer.on('disconnected', () => updateStatusUI(false));
+        
+        // IMPORTANTE: Al conectar, si ya tenemos audio context, hacer la llamada
+        if(destNode) makeCall();
+    }
+    
+    function makeCall() {
+        if(!peer || !hostId || !destNode) return;
+        const call = peer.call(hostId, destNode.stream);
     }
 
     function updateStatusUI(online) {
-        const dot = document.querySelector('.status-indicator .dot'); const txt = document.querySelector('.status-indicator span'); const menuStat = document.getElementById('menu-status');
+        const dot = document.querySelector('.status-indicator .dot');
+        const txt = document.querySelector('.status-indicator span');
+        const menuStat = document.getElementById('menu-status');
         if(online) {
             dot.className = "dot online"; txt.innerText = "EN VIVO"; txt.style.color="#00ff41";
-            menuStat.innerText = "CONECTADO"; menuStat.style.color="#00ff41"; menuStat.style.borderColor = "#00ff41";
+            menuStat.innerText = "CONECTADO"; menuStat.style.color="#00ff41";
+            menuStat.style.borderColor = "#00ff41";
         } else {
             dot.className = "dot offline"; txt.innerText = "OFFLINE"; txt.style.color="#ff0055";
-            menuStat.innerText = "MODO OFFLINE"; menuStat.style.color="#ffae00"; menuStat.style.borderColor = "#ffae00";
+            menuStat.innerText = "MODO OFFLINE"; menuStat.style.color="#ffae00";
+            menuStat.style.borderColor = "#ffae00";
         }
     }
 
     // 3. API VALIDATION
-    function openApiSettings() { document.getElementById('input-api-key').value = GEMINI_API_KEY; document.getElementById('modal-api').classList.add('active'); }
+    function openApiSettings() {
+        document.getElementById('input-api-key').value = GEMINI_API_KEY;
+        document.getElementById('modal-api').classList.add('active');
+    }
+    
     async function saveApiKey() {
         const key = document.getElementById('input-api-key').value.trim();
         if(key.length > 10) {
-            localStorage.setItem('obr_api_key_mic', key); GEMINI_API_KEY = key;
+            localStorage.setItem('obr_api_key_mic', key);
+            GEMINI_API_KEY = key;
             document.getElementById('modal-api').classList.remove('active');
-            updateApiStatus(undefined); validateApiKey(key); alert("LLAVE GUARDADA");
+            updateApiStatus(undefined); 
+            validateApiKey(key);
+            alert("LLAVE GUARDADA");
         }
     }
+    
     async function validateApiKey(key) {
         try {
             const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${key}`, {
@@ -390,9 +533,12 @@
             if(response.ok) updateApiStatus(true); else updateApiStatus(false);
         } catch(e) { updateApiStatus(false); }
     }
+    
     function updateApiStatus(isValid) {
-        const btn = document.getElementById('btn-spirit'); const status = document.getElementById('spirit-status');
+        const btn = document.getElementById('btn-spirit');
+        const status = document.getElementById('spirit-status');
         if(!btn || !status) return;
+
         if(isValid === true) {
             btn.classList.remove('locked'); btn.onclick = () => checkSpiritMode(); 
             status.innerHTML = "LISTO"; status.style.color = "#00ff41";
@@ -408,7 +554,7 @@
         }
     }
 
-    // 4. MODE & CALIBRATION
+    // 4. MODE LOGIC
     function checkSpiritMode() {
         if(!document.getElementById('btn-spirit').classList.contains('locked')) {
             document.getElementById('modal-photo').classList.add('active');
@@ -422,7 +568,9 @@
         const videoPreview = document.getElementById('seed-video');
         
         if(!videoPreview.videoWidth) { status.innerText = "ESPERA A LA CAMARA..."; return; }
+
         status.innerText = "ANALIZANDO..."; spinner.style.display = 'block';
+        setDictionaryState('loading');
         
         const cvs = document.createElement('canvas'); cvs.width = 640; cvs.height = 480;
         cvs.getContext('2d').drawImage(videoPreview, 0, 0, 640, 480);
@@ -433,13 +581,12 @@
                 const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`, {
                     method:'POST', headers:{'Content-Type':'application/json'},
                     body:JSON.stringify({
-                        contents:[{parts:[{text: "Genera una lista de 100 PALABRAS SUELTAS en mayúsculas separadas por '|' sobre lo que ves en la imagen (muebles, luz, objetos) y palabras de terror. SOLO PALABRAS."}, {inline_data:{mime_type:"image/jpeg",data:b64}}]}]
+                        contents:[{parts:[{text: "Genera una lista de 100 PALABRAS SUELTAS en mayúsculas separadas por '|' sobre lo que ves en la imagen (muebles, luz, objetos) y palabras de terror."}, {inline_data:{mime_type:"image/jpeg",data:b64}}]}]
                     })
                 });
                 const d = await r.json();
                 const rawText = d.candidates?.[0]?.content?.parts?.[0]?.text || "";
                 if(rawText) {
-                    // LIMPIEZA Y ASIGNACION
                     spiritScript = rawText.split('|').map(s => s.trim().replace(/[^a-zA-ZÀ-ÿ0-9 ]/g, '')).filter(s => s.length > 2);
                     isFallbackMode = false; resolve();
                 } else reject("Empty");
@@ -451,10 +598,12 @@
         try {
             await Promise.race([apiCall, timeout]);
             status.innerText = "LISTO";
+            setDictionaryState('success');
         } catch(e) {
             console.log("Fallback Local");
-            // MANTENER BACKUP
+            spiritScript = ["VACÍO", "FRÍO", "AQUÍ", "DOLOR", "VEO", "ATRAS", "MUERTE", "AYUDA", "NO", "SI", "SOLO", "SOMBRA"];
             isFallbackMode = true;
+            setDictionaryState('success');
         } finally {
             isCalibrated = true;
             populateDictionary(); 
@@ -470,10 +619,18 @@
         container.innerHTML = "";
         spiritScript.forEach(word => {
             const sp = document.createElement('div'); 
-            sp.innerText = word; sp.className="word-item"; 
+            sp.innerText = word; sp.className="word-item text-cyan-400 font-mono"; 
             container.appendChild(sp);
         });
     }
+
+    function setDictionaryState(state) {
+        const btn = document.getElementById('btn-dictionary');
+        btn.className = ""; btn.style.display = "block";
+        if(state === 'loading') btn.classList.add('loading');
+        else if (state === 'success') { btn.classList.add('success'); setTimeout(() => btn.className = "", 1000); }
+    }
+
     function openDictionary() { document.getElementById('modal-dictionary').classList.add('active'); }
 
     function setMode(m) {
@@ -482,7 +639,6 @@
         const camBg = document.getElementById('cam-video-bg');
         const filter = document.getElementById('cam-filter-layer');
         const overlay = document.getElementById('bg-overlay');
-        const bgAudio = document.getElementById('bg-noise');
         const dictBtn = document.getElementById('btn-dictionary');
 
         uiMic.classList.add('hidden'); uiSpirit.classList.add('hidden');
@@ -490,32 +646,55 @@
         overlay.style.opacity = '0.85';
         clearInterval(autoSpiritInterval);
         dictBtn.style.display = 'none';
+        
+        // RESET AUDIO
+        window.bgAudioElement.pause();
 
         if(m === 'mic') {
-            uiMic.classList.remove('hidden'); overlay.style.opacity = '0.5'; bgAudio.pause();
+            uiMic.classList.remove('hidden');
+            overlay.style.opacity = '0.5'; 
+            
+            // En mic mode, el mic siempre esta abierto
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            micGainNode.gain.value = 1.0;
+            
         } else {
             uiSpirit.classList.remove('hidden');
-            camBg.style.display = 'block'; filter.style.display = 'block'; overlay.style.opacity = '0';
+            camBg.style.display = 'block'; 
+            filter.style.display = 'block'; 
+            overlay.style.opacity = '0';
+            
             document.getElementById('bg-static').style.display = 'none';
             
-            initSpeech();
-            bgAudio.volume = 1.0; bgAudio.play().catch(()=>{});
+            // AUDIO CONFIG FOR SPIRIT
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            micGainNode.gain.value = 0; // Mute mic initially
+            window.bgAudioElement.play(); // Play background
             
-            triggerGreenPulse(); enableButton(); 
-            startPassiveLoop(); // INICIAR BUCLE PASIVO
+            initSpeech();
+            
+            triggerGreenPulse(); 
+            enableButton(); // BLANCO
+            startPassiveLoop(); // INICIAR BUCLE
             
             document.getElementById('btn-dictionary').style.display = 'block';
         }
-        initAudioEngine();
+        
+        if(!isStandalone && peer && destNode) {
+             // Ensure peer call is active
+             makeCall();
+        }
+        
         show('s-live');
     }
 
     function triggerGreenPulse() {
         const btn = document.getElementById('invoke-btn');
-        btn.classList.add('success'); setTimeout(() => btn.classList.remove('success'), 600); 
+        btn.classList.add('success'); 
+        setTimeout(() => btn.classList.remove('success'), 600); 
     }
 
-    // 5. SPIRIT LOGIC (CERO SILENCIOS)
+    // 5. SPIRIT LOGIC
     function enableButton() {
         const btn = document.getElementById('invoke-btn');
         const label = document.getElementById('invoke-label');
@@ -525,9 +704,7 @@
 
     function startPassiveLoop() {
         clearInterval(autoSpiritInterval);
-        // DISPARA PALABRA CADA 4-8 SEGUNDOS
         autoSpiritInterval = setInterval(() => {
-            // Solo si no estamos hablando/analizando
             if(!isProcessing && document.getElementById('s-live').style.display === 'flex') {
                 triggerRandomWord();
             }
@@ -538,13 +715,10 @@
         if(spiritScript.length === 0) return;
         const word = spiritScript[Math.floor(Math.random() * spiritScript.length)];
         
-        playEVPNoise();
+        // No usamos oscilador ya, el fondo es suficiente
         const txt = document.getElementById('spirit-text');
         txt.innerText = word.toUpperCase(); txt.style.opacity = 1;
-        
-        // CRUCIAL: HABLAR EN VOZ ALTA
-        speakWithEcho(word);
-        
+        speakWithEcho(word); 
         setTimeout(()=> txt.style.opacity=0, 3000);
     }
 
@@ -560,7 +734,11 @@
         if(isProcessing) return;
         isProcessing = true;
         clearInterval(autoSpiritInterval); 
-        document.getElementById('bg-noise').volume = 0.2; // Ducking
+        
+        // UNMUTE MIC
+        micGainNode.gain.value = 1.0;
+        // DUCK BG
+        bgGainNode.gain.value = 0.2;
         
         const btn = document.getElementById('invoke-btn');
         btn.classList.remove('ready'); btn.classList.add('listening');
@@ -574,13 +752,17 @@
     function stopListening() {
         if(recognition) recognition.stop();
         const btn = document.getElementById('invoke-btn');
-        btn.classList.remove('listening'); btn.classList.add('locked'); btn.disabled = true;         
-        document.getElementById('invoke-label').innerText = "ANALIZANDO..."; document.getElementById('invoke-label').style.color = "#ffae00";
+        btn.classList.remove('listening'); btn.classList.add('locked'); 
+        btn.disabled = true;         
+        document.getElementById('invoke-label').innerText = "ANALIZANDO...";
+        document.getElementById('invoke-label').style.color = "#ffae00";
         
-        // WATCHDOG DE SILENCIO (2s)
+        // MUTE MIC ASAP
+        micGainNode.gain.value = 0;
+        
+        // WATCHDOG
         speechTimeout = setTimeout(() => {
-            if(isProcessing && (document.getElementById('spirit-text').innerText === "..." || document.getElementById('spirit-text').style.opacity === '0')) {
-                // Si no hubo respuesta IA, forzar palabra random
+            if(document.getElementById('spirit-text').innerText === "..." || document.getElementById('spirit-text').style.opacity === '0') {
                 triggerRandomWord(); 
                 resetUIState();
             }
@@ -613,7 +795,6 @@
             
             if(ans) {
                 txt.innerText = ans.toUpperCase();
-                playEVPNoise();
                 speakWithEcho(ans);
             } else throw new Error("No text");
 
@@ -626,44 +807,26 @@
     
     function resetUIState() {
         isProcessing = false; 
-        document.getElementById('bg-noise').volume = 1.0; 
+        bgGainNode.gain.value = 1.0; // RESTORE BG
         document.getElementById('spirit-text').style.opacity = 0;
         enableButton(); 
         startPassiveLoop();
     }
 
     // UTILS
-    function initAudioEngine() {
-        if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-        if(!isStandalone && peer) {
-            if(!destNode) destNode = audioCtx.createMediaStreamDestination();
-            if(!micNode) { micNode = audioCtx.createMediaStreamSource(stream); micNode.connect(destNode); }
-            const callStream = destNode.stream;
-            if(stream.getVideoTracks().length>0) callStream.addTrack(stream.getVideoTracks()[0].clone());
-            peer.call(hostId, callStream);
-        }
-    }
-
     function speakWithEcho(text) {
         if('speechSynthesis' in window) {
             window.speechSynthesis.cancel();
             // Ducking
-            document.getElementById('bg-noise').volume = 0.2;
+            bgGainNode.gain.value = 0.2;
+            
             const u1 = new SpeechSynthesisUtterance(text); u1.lang = 'es-ES'; u1.pitch = currentPitch; u1.rate = 0.8;
             const u2 = new SpeechSynthesisUtterance(text); u2.lang = 'es-ES'; u2.pitch = currentPitch - 0.3; u2.rate = 0.7; u2.volume = 0.6;
-            window.speechSynthesis.speak(u1); setTimeout(()=>window.speechSynthesis.speak(u2), 120);
-            setTimeout(() => { if(!isProcessing) document.getElementById('bg-noise').volume = 1.0; }, 2500);
+            window.speechSynthesis.speak(u1);
+            setTimeout(()=>window.speechSynthesis.speak(u2), 120);
+            
+            setTimeout(() => { if(!isProcessing) bgGainNode.gain.value = 1.0; }, 2500);
         }
-    }
-
-    function playEVPNoise() {
-        if(!audioCtx) return;
-        const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
-        osc.connect(g); g.connect(audioCtx.destination);
-        osc.type='sawtooth'; osc.frequency.setValueAtTime(100, audioCtx.currentTime);
-        osc.frequency.linearRampToValueAtTime(50, audioCtx.currentTime+0.5);
-        g.gain.setValueAtTime(0.05, audioCtx.currentTime); g.gain.linearRampToValueAtTime(0, audioCtx.currentTime+0.5);
-        osc.start(); osc.stop(audioCtx.currentTime+0.5);
     }
 
     function show(id) { document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
