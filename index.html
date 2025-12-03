@@ -8,7 +8,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
-    <title>OBR LINK v39.5 FINAL</title>
+    <title>OBR LINK v41.3 FINAL</title>
     
     <link rel="apple-touch-icon" href="obr-logo.png">
     <link rel="icon" type="image/png" href="obr-logo.png">
@@ -23,12 +23,8 @@
     <style>
         :root { --primary: #00f3ff; --secondary: #ff0055; --success: #00ff41; --warn: #ffae00; }
         
-        /* BLOQUEO TOTAL DE SELECCION EN MOVIL */
         * { 
             -webkit-tap-highlight-color: transparent; 
-            -webkit-touch-callout: none; 
-            -webkit-user-select: none; 
-            user-select: none; 
             outline: none; 
             box-sizing: border-box; 
         }
@@ -36,25 +32,40 @@
         html, body {
             background-color: #000; color: var(--primary); font-family: 'Orbitron', sans-serif;
             height: 100dvh; width: 100vw; margin: 0; padding: 0; position: fixed; top: 0; left: 0;
-            touch-action: none; overflow: hidden; overscroll-behavior: none;
+            overflow: hidden; overscroll-behavior: none;
+            -webkit-touch-callout: none; 
+            -webkit-user-select: none; 
+            user-select: none; 
+            touch-action: none;
         }
 
-        /* FONDO ESTÁTICO (Modo Micrófono y Escáner) */
+        /* EXCEPCION PARA INPUTS */
+        input, textarea {
+            -webkit-user-select: text !important;
+            user-select: text !important;
+            touch-action: auto !important;
+            -webkit-touch-callout: default !important;
+        }
+
+        #battery-saver {
+            position: fixed; inset: 0; z-index: 9999;
+            background: rgba(0, 0, 0, 0.65);
+            pointer-events: none;
+            display: none;
+        }
+
         #bg-static { 
             position: fixed; inset: 0; z-index: -10; 
             background-image: url('fondo_pantalla.jpg'); background-size: cover; background-position: center; 
             opacity: 1; transition: opacity 0.5s ease;
         }
         
-        /* CÁMARA PRINCIPAL (Modo Spirit) */
         #cam-video-bg {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: -15;
             opacity: 0; transition: opacity 0.5s;
-            /* FILTRO NOCTURNO SUTIL */
             filter: contrast(1.2) brightness(1.1) grayscale(0.8) sepia(0.2); 
         }
 
-        /* HUD LAYER */
         #hud-layer {
             position: fixed; inset: 0; z-index: 5; pointer-events: none; overflow: hidden; display: none;
         }
@@ -79,7 +90,6 @@
         .app-btn.red:active { background: var(--secondary); color: white; }
         .app-btn.locked { opacity: 0.4; filter: grayscale(1); pointer-events: none; border-color: #555; }
 
-        /* ESCÁNER */
         #s-scan { background: transparent; }
         #scan-overlay-dark { position: absolute; inset: 0; background: rgba(0,0,0,0.3); z-index: 0; }
         
@@ -91,20 +101,22 @@
         }
         #scan-video { width: 100%; height: 100%; object-fit: cover; opacity: 1; }
         
-        .scan-laser {
-            position: absolute; top: 0; left: 0; width: 100%; height: 4px;
-            background: var(--secondary); box-shadow: 0 0 20px var(--secondary);
-            animation: laserScan 1.5s infinite linear; z-index: 11;
+        /* EFECTO DE ESCANEO (REUTILIZABLE) */
+        .scan-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, transparent 40%, rgba(0, 243, 255, 0.4) 50%, transparent 60%);
+            background-size: 100% 200%;
+            animation: scanVertical 1.5s infinite linear;
+            pointer-events: none;
+            z-index: 50;
         }
-        @keyframes laserScan { 0% { top: 0; opacity:0; } 10% { opacity:1; } 90% { opacity:1; } 100% { top: 100%; opacity:0; } }
+        @keyframes scanVertical { 0% { background-position: 0% 0%; } 100% { background-position: 0% 100%; } }
 
-        /* UI ELEMENTS */
-        .status-bar { position: absolute; top: 0; left: 0; width: 100%; padding: 15px; display: flex; justify-content: space-between; z-index: 50; background: linear-gradient(to bottom, black, transparent); }
+        .status-bar { position: absolute; top: 0; left: 0; width: 100%; padding: 15px; display: flex; justify-content: space-between; align-items: center; z-index: 50; background: linear-gradient(to bottom, black, transparent); }
         .dot { width: 8px; height: 8px; border-radius: 50%; background: #555; display: inline-block; margin-right: 5px; }
         .dot.online { background: var(--success); box-shadow: 0 0 10px var(--success); animation: blink 2s infinite; }
         @keyframes blink { 50% { opacity: 0.5; } }
 
-        /* CONFIG BTN */
         #btn-api-config-menu {
             position: absolute; top: 20px; right: 20px; 
             font-size: 1.5rem; color: #aaa; 
@@ -112,13 +124,29 @@
             z-index: 60; cursor: pointer;
         }
 
-        #btn-wordbank {
-            position: absolute; top: 100px; right: 20px; z-index: 60; font-size: 1.2rem;
-            padding: 12px; border-radius: 50%; background: rgba(0,0,0,0.6);
-            transition: all 0.3s; border: 1px solid #555; color: white; opacity: 0.6; display: none;
+        /* BOTONES DISCRETOS (TRANSLUCIDOS) */
+        .discrete-btn {
+            position: absolute; z-index: 60;
+            width: 40px; height: 40px; font-size: 1rem;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 50%; background: rgba(0,0,0,0.3); /* Mas transparente */
+            border: 1px solid rgba(255,255,255,0.2);
+            color: rgba(255,255,255,0.7);
+            transition: all 0.3s;
+            cursor: pointer;
         }
+        .discrete-btn:active { background: var(--primary); color: black; opacity: 1; }
+        
+        /* POSICION BANCO DE PALABRAS AJUSTADA (BAJO SALIR) */
+        #btn-wordbank { top: 70px; right: 15px; }
+        
+        #btn-location-change { bottom: 30px; left: 30px; }
+        
         #btn-wordbank.loading { border-color: var(--warn); color: var(--warn); animation: pulseOrange 0.5s infinite; opacity: 1; }
         #btn-wordbank.ready { border-color: var(--success); color: var(--success); animation: pulseGreen 0.3s 2; opacity: 1; }
+        #btn-location-change.tuning { animation: spinTune 1s infinite linear; border-color: var(--warn); color: var(--warn); opacity: 1; }
+
+        @keyframes spinTune { 100% { transform: rotate(360deg); } }
         @keyframes pulseOrange { 50% { box-shadow: 0 0 25px var(--warn); transform: scale(1.1); } }
         @keyframes pulseGreen { 50% { transform: scale(1.3); box-shadow: 0 0 30px var(--success); } }
 
@@ -128,12 +156,10 @@
             background: rgba(20,20,20,0.9); color: #555; font-size: 2.5rem; 
             display: flex; align-items: center; justify-content: center; 
             transition: 0.2s; backdrop-filter: blur(4px); 
-            /* PROPIEDADES ANTI SELECCION */
-            touch-action: none; 
-            -webkit-user-select: none;
-            user-select: none;
+            touch-action: none; -webkit-user-select: none; user-select: none;
         }
         .invoke-btn.active { border-color: var(--success); color: var(--success); box-shadow: 0 0 30px var(--success) inset; transform: scale(1.1); }
+        .invoke-btn.locked { border-color: var(--secondary); color: #555; cursor: not-allowed; } 
         
         #spirit-text { 
             position: absolute; bottom: 200px; width: 90%; left: 5%; 
@@ -142,8 +168,23 @@
             pointer-events: none; z-index: 2000; opacity: 0; transition: opacity 0.3s;
         }
 
+        #user-transcript {
+            margin-top: 5px;
+            font-size: 0.6rem;
+            color: #666;
+            font-family: 'Share Tech Mono';
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            min-height: 15px;
+            text-align: center;
+            width: 80%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
         #ui-spirit { width: 100%; height: 100%; position: absolute; top:0; left:0; pointer-events: none; }
-        #ui-spirit .invoke-container, #ui-spirit #btn-wordbank { pointer-events: auto; }
+        #ui-spirit .invoke-container, #ui-spirit .discrete-btn { pointer-events: auto; }
 
         #btn-toggle-mode {
             position: absolute; bottom: 30px; right: 30px; z-index: 60;
@@ -160,66 +201,34 @@
         .auth-input { background: #222; border: 1px solid #444; color: white; padding: 10px; text-align: center; width: 80%; margin: 10px 0; }
         .area-input { background: #111; border: 1px solid #333; color: var(--primary); padding: 10px; width: 100%; margin: 10px 0; font-family: 'Share Tech Mono'; font-size: 0.9rem; height: 80px; resize: none; }
         
-        .word-list { 
-            max-height: 50vh; overflow-y: auto; width: 95%; 
-            display: grid; grid-template-columns: repeat(4, 1fr); 
-            gap: 4px; font-family: 'Share Tech Mono'; font-size: 0.7rem; 
-        }
-        .word-item { 
-            background: rgba(20,20,20,0.9); padding: 6px 2px; 
-            border: 1px solid #333; color: #fff; text-align: center; 
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
+        .word-list { max-height: 50vh; overflow-y: auto; width: 95%; display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; font-family: 'Share Tech Mono'; font-size: 0.7rem; }
+        .word-item { background: rgba(20,20,20,0.9); padding: 6px 2px; border: 1px solid #333; color: #fff; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        /* UI MICROFONO GRANDE */
-        #ui-mic-overlay {
-            position: absolute; inset: 0; z-index: 40; pointer-events: none;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            opacity: 0; transition: opacity 0.5s;
-        }
-        #ui-mic-overlay.active { opacity: 1; pointer-events: auto; } /* Active permite clicks si fuera necesario */
+        #ui-mic-overlay { position: absolute; inset: 0; z-index: 40; pointer-events: none; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.5s; }
+        #ui-mic-overlay.active { opacity: 1; pointer-events: auto; }
         
-        #mic-logo-center {
-            width: 180px; height: 180px; border-radius: 50%;
-            border: 4px solid var(--primary);
-            display: flex; align-items: center; justify-content: center;
-            background: rgba(0, 0, 0, 0.7);
-            box-shadow: 0 0 50px rgba(0, 243, 255, 0.2);
-            position: relative;
-        }
+        #mic-logo-center { width: 180px; height: 180px; border-radius: 50%; border: 4px solid var(--primary); display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.7); box-shadow: 0 0 50px rgba(0, 243, 255, 0.2); position: relative; }
         
-        /* ONDAS DE SEÑAL */
-        .signal-wave {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 100%; height: 100%; border-radius: 50%;
-            border: 2px solid var(--primary);
-            animation: ripple 2s infinite linear;
-            opacity: 0;
-        }
+        .signal-wave { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; height: 100%; border-radius: 50%; border: 2px solid var(--primary); animation: ripple 2s infinite linear; opacity: 0; }
         .signal-wave:nth-child(1) { animation-delay: 0s; }
         .signal-wave:nth-child(2) { animation-delay: 0.6s; }
         .signal-wave:nth-child(3) { animation-delay: 1.2s; }
         
-        @keyframes ripple {
-            0% { width: 100%; height: 100%; opacity: 0.8; border-width: 4px; }
-            100% { width: 250%; height: 250%; opacity: 0; border-width: 0px; }
-        }
+        /* VISUALIZADOR DE AUDIO PEQUEÑO */
+        #mic-visualizer { width: 50px; height: 20px; margin-left: 10px; display: none; }
 
+        @keyframes ripple { 0% { width: 100%; height: 100%; opacity: 0.8; border-width: 4px; } 100% { width: 250%; height: 250%; opacity: 0; border-width: 0px; } }
         @keyframes pulseMic { 0% { box-shadow: 0 0 20px var(--primary); } 50% { box-shadow: 0 0 60px var(--primary); } 100% { box-shadow: 0 0 20px var(--primary); } }
 
     </style>
 </head>
 <body oncontextmenu="return false;">
 
-    <!-- BG STATIC (VISIBLE EN SCANNER Y MIC MODE) -->
+    <div id="battery-saver"></div>
     <div id="bg-static"></div>
-    
-    <!-- VIDEO PRINCIPAL (SOLO VISIBLE EN SPIRIT MODE) -->
     <video id="cam-video-bg" playsinline autoplay muted loop></video>
-    
     <div id="hud-layer"></div>
 
-    <!-- ELEMENTOS OCULTOS PARA FUNCIONAMIENTO -->
     <video id="seed-video" playsinline autoplay muted class="hidden"></video>
     <video id="keep-alive-video" playsinline autoplay muted loop style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;"></video>
 
@@ -227,16 +236,17 @@
     <div id="s-login" class="screen active">
         <img src="obr-logo.png" class="w-32 mb-6 animate-pulse" onerror="this.style.display='none'">
         <h1 class="text-3xl font-bold tracking-widest text-white mb-2">OBR LINK</h1>
-        <p class="text-xs text-gray-400 font-mono mb-10">SISTEMA RESTAURADO v39.5</p>
+        <p class="text-xs text-gray-400 font-mono mb-10">SISTEMA RESTAURADO v41.3</p>
         <button id="btn-enter-system" class="app-btn justify-center font-bold tracking-widest" onclick="window.startSystem()">INICIAR SISTEMA</button>
     </div>
 
-    <!-- 2. SCANNER -->
+    <!-- 2. SCANNER CON EFECTO DE BARRIDO -->
     <div id="s-scan" class="screen">
         <div id="scan-overlay-dark"></div>
         <div id="scan-frame">
             <video id="scan-video" playsinline muted></video>
-            <div class="scan-laser"></div>
+            <!-- NUEVO EFECTO ESCANER -->
+            <div class="scan-overlay" style="display: block;"></div> 
         </div>
         <div class="absolute top-24 text-center w-full text-cyan-400 font-bold text-sm" style="z-index:20;">ESCANEAR QR DETECTOR</div>
         <div id="btn-offline-access" onclick="openAuthModal()" style="position: absolute; top: 20px; right: 20px; z-index: 60; color: rgba(255,255,255,0.3); font-size: 1.5rem;"><i class="fas fa-cog"></i></div>
@@ -254,8 +264,10 @@
         <div class="modal-box bg-black p-4 rounded-lg w-11/12 max-w-md border-2 border-red-900 shadow-lg shadow-red-900/50" style="margin-top: -50px;">
             <h3 class="text-red-500 font-bold mb-2 font-creepy tracking-widest text-2xl text-center">CALIBRAR ENTORNO</h3>
             <textarea id="place-context" class="area-input" placeholder="ESCRIBE CONTEXTO: Cementerio, Casa Antigua, Bosque, Hospital... (Opcional)" oninput="checkContextInput()"></textarea>
-            <div class="relative w-full h-48 bg-black rounded-lg overflow-hidden mb-4 border border-gray-800">
+            <div class="relative w-full h-48 bg-black rounded-lg overflow-hidden mb-4 border border-gray-800" style="position: relative;">
                 <video id="preview-video" autoplay playsinline muted style="width:100%; height:100%; object-fit:cover;"></video>
+                <!-- CAPA DE ESCANEO -->
+                <div id="preview-scan-overlay" class="scan-overlay" style="display:none;"></div>
             </div>
             <button id="btn-scan-now" class="bg-red-900 hover:bg-red-800 text-white p-4 rounded w-full flex items-center justify-center gap-2 font-bold text-lg transition-all" onclick="captureSeed()">
                 <i class="fas fa-camera text-xl"></i> CALIBRAR
@@ -272,7 +284,6 @@
         <div class="text-center mb-10 w-full relative">
             <img src="obr-logo.png" class="w-24 mx-auto mb-4" onerror="this.style.display='none'">
             <div id="conn-status" class="text-xs text-green-400 font-bold border border-green-800 px-4 py-1 rounded-full inline-block tracking-widest">CONECTADO</div>
-            <!-- CONFIG BTN -->
             <div id="btn-api-config-menu" onclick="openApiSettings()"><i class="fas fa-cog"></i></div>
         </div>
         <div id="btn-mic-pro" class="app-btn" onclick="enterMicPro()">
@@ -288,13 +299,20 @@
     <!-- LIVE SCREEN -->
     <div id="s-live" class="screen">
         <div class="status-bar">
-            <div class="flex items-center"><div id="live-dot" class="dot online"></div><span id="live-text" class="text-xs text-green-400 font-bold">LIVE</span></div>
+            <div class="flex items-center">
+                <div id="live-dot" class="dot online"></div>
+                <span id="live-text" class="text-xs text-green-400 font-bold">LIVE</span>
+                <!-- VISUALIZADOR DE AUDIO (BARRAS) -->
+                <canvas id="mic-visualizer"></canvas>
+            </div>
             <button onclick="logout()" class="text-xs text-gray-400 border border-gray-600 px-3 py-1 rounded">SALIR</button>
         </div>
 
-        <div id="btn-wordbank" class="idle" onclick="showWordBank()"><i class="fas fa-book"></i></div>
+        <!-- BOTONES SUPERIORES / INFERIORES (DISCRETOS) -->
+        <div id="btn-wordbank" class="discrete-btn" onclick="showWordBank()"><i class="fas fa-book"></i></div>
+        <div id="btn-location-change" class="discrete-btn" onclick="manualLocationChange()"><i class="fas fa-map-marker-alt"></i></div>
 
-        <!-- UI MIC OVERLAY (SOLO MODO MICROFONO) -->
+        <!-- UI MIC OVERLAY -->
         <div id="ui-mic-overlay">
             <div id="mic-logo-center">
                 <div class="signal-wave"></div>
@@ -305,7 +323,7 @@
             <p class="mt-12 text-cyan-300 text-sm font-mono tracking-widest font-bold animate-pulse">TRANSMITIENDO SEÑAL</p>
         </div>
         
-        <!-- UI SPIRIT (SOLO MODO SPIRIT) -->
+        <!-- UI SPIRIT -->
         <div id="ui-spirit">
             <div id="spirit-text"></div>
             <div class="invoke-container">
@@ -313,6 +331,8 @@
                     <i id="invoke-icon" class="fas fa-fingerprint"></i>
                 </button>
                 <div id="invoke-status" class="text-[10px] text-gray-400 mt-2 tracking-widest font-bold">CALIBRANDO...</div>
+                <!-- TEXTO PEQUEÑO DE LO QUE SE ENTENDIÓ -->
+                <div id="user-transcript"></div>
             </div>
         </div>
         
@@ -327,515 +347,314 @@
     // --- GLOBALS ---
     let GEMINI_API_KEY = localStorage.getItem('obr_api_key_mic') || "";
     let stream, peer, conn, hostId;
-    let audioCtx, destNode, micSource, micGainNode, bgSourceNode, bgGainNode;
+    let audioCtx, destNode, micSource, bgSourceNode;
+    let micGainNode, bgToLocalGain, bgToPeerGain;
+    let analyser, dataArray; 
+    
     let recognition, isProcessing = false, passiveInterval;
-    // DICCIONARIO BASE (Fallback)
     let spiritScript = ["VACÍO", "FRÍO", "AQUÍ", "DOLOR", "VEO", "ATRAS", "MUERTE", "AYUDA", "NO", "SI", "SOLO", "SOMBRA", "LUZ", "NIÑO", "VIEJO"];
     let isCalibrated = false, isFallbackMode = false;
     let isSpiritVoxActive = true; 
     let isMicMode = false; 
     let isWordBankReady = false; 
     let currentMode = "";
-    // PARAMETROS DE VOZ VARIABLES
+    
     let currentPitch = 0.8;
     let currentRate = 0.8;
+    let currentEntityName = "DESCONOCIDO";
+    let isTuning = false;
     
+    // LISTAS DE NOMBRES RESTAURADAS (FIX)
+    const MALE_NAMES = ["JUAN", "PEDRO", "LUIS", "JOSE", "CARLOS", "MIGUEL", "DAVID", "JORGE", "MANUEL", "ANTONIO"];
+    const FEMALE_NAMES = ["ANA", "MARIA", "CARMEN", "ISABEL", "ELENA", "LUCIA", "SOFIA", "LAURA", "MARTA", "ROSA"];
+    const NAMES_DB = [...MALE_NAMES, ...FEMALE_NAMES]; // Fallback
+
     let isStandalone = false;
     let hudInterval; 
+    let wakeLock = null;
     window.currentImageB64 = ""; 
 
-    // --- 1. UTILS ---
+    const GAIN_MIC_TALK = 2.0; 
+    const GAIN_MIC_LISTEN_AI = 4.0; 
+    const GAIN_MIC_MUTE = 0; 
+
+    // --- UTILS ---
     function show(id) { document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
-    
-    function updateStatusUI(online) {
-        const dot = document.getElementById('live-dot');
-        const txt = document.getElementById('live-text');
-        const menuStat = document.getElementById('conn-status');
-        if(online) {
-            if(dot) dot.className = "dot online";
-            if(txt) { txt.innerText = "EN VIVO"; txt.style.color="#00ff41"; }
-            if(menuStat) { menuStat.innerText = "CONECTADO"; menuStat.style.color="#00ff41"; menuStat.style.borderColor = "#00ff41"; }
-        } else {
-            if(dot) dot.className = "dot offline";
-            if(txt) { txt.innerText = "OFFLINE"; txt.style.color="#ff0055"; }
-            if(menuStat) { menuStat.innerText = "MODO OFFLINE"; menuStat.style.color="#ffae00"; menuStat.style.borderColor = "#ffae00"; }
-        }
-    }
+    async function requestWakeLock() { try { if ('wakeLock' in navigator) { wakeLock = await navigator.wakeLock.request('screen'); document.getElementById('battery-saver').style.display = 'block'; } } catch (err) { console.log('Wake Lock Error:', err); } }
+    function updateStatusUI(online) { const dot = document.getElementById('live-dot'); const txt = document.getElementById('live-text'); const menuStat = document.getElementById('conn-status'); if(online) { if(dot) dot.className = "dot online"; if(txt) { txt.innerText = "EN VIVO"; txt.style.color="#00ff41"; } if(menuStat) { menuStat.innerText = "CONECTADO"; menuStat.style.color="#00ff41"; menuStat.style.borderColor = "#00ff41"; } } else { if(dot) dot.className = "dot offline"; if(txt) { txt.innerText = "OFFLINE"; txt.style.color="#ff0055"; } if(menuStat) { menuStat.innerText = "MODO OFFLINE"; menuStat.style.color="#ffae00"; menuStat.style.borderColor = "#ffae00"; } } }
+    function checkContextInput() { document.getElementById('btn-scan-now').style.display = 'flex'; }
+    function updateWordBankIcon(state) { const btn = document.getElementById('btn-wordbank'); const invoke = document.getElementById('invoke-btn'); const lbl = document.getElementById('invoke-status'); if(state === 'loading') { if(btn) btn.className = 'loading'; if(invoke) invoke.className = 'invoke-btn locked'; if(lbl) { lbl.innerText = "CALIBRANDO ENTORNO..."; lbl.style.color = "#ffae00"; } } else if (state === 'ready') { if(btn) btn.className = 'ready'; setTimeout(() => { if(btn) btn.className = ''; }, 1000); if(invoke) { invoke.disabled = false; invoke.className = 'invoke-btn ready'; } if(lbl) { lbl.innerText = "MANTENER PARA PREGUNTAR"; lbl.style.color = "#fff"; } isWordBankReady = true; } }
+    function populateDictionary() { const c = document.getElementById('word-list-container'); if(!c) return; c.innerHTML = ""; spiritScript.forEach(w => { const s = document.createElement('div'); s.innerText = w; s.className="word-item"; c.appendChild(s); }); }
 
-    function checkContextInput() {
-        const btn = document.getElementById('btn-scan-now');
-        if(btn) btn.style.display = 'flex';
-    }
-
-    function updateWordBankIcon(state) {
-        const btn = document.getElementById('btn-wordbank');
-        const invoke = document.getElementById('invoke-btn');
-        const lbl = document.getElementById('invoke-status');
-        if(state === 'loading') {
-            if(btn) btn.className = 'loading'; 
-            if(invoke) invoke.className = 'invoke-btn locked'; 
-            if(lbl) { lbl.innerText = "CALIBRANDO ENTORNO..."; lbl.style.color = "#ffae00"; }
-        } else if (state === 'ready') {
-            if(btn) btn.className = 'ready';
-            setTimeout(() => { if(btn) btn.className = ''; }, 1000);
-            if(invoke) { invoke.disabled = false; invoke.className = 'invoke-btn ready'; }
-            if(lbl) { lbl.innerText = "MANTENER PARA PREGUNTAR"; lbl.style.color = "#fff"; }
-            isWordBankReady = true;
-        }
-    }
-
-    function populateDictionary() {
-        const c = document.getElementById('word-list-container'); 
-        if(!c) return;
-        c.innerHTML = ""; 
-        spiritScript.forEach(w => { 
-            const s = document.createElement('div'); 
-            s.innerText = w; s.className="word-item"; 
-            c.appendChild(s); 
-        });
-    }
-
-    // --- 2. SYSTEM START ---
+    // --- SYSTEM START ---
     window.startSystem = async function() {
-        const btn = document.getElementById('btn-enter-system');
-        btn.innerText = "INICIANDO..."; btn.disabled = true;
-        
-        // UNLOCK AUDIO MOBILE
-        if('speechSynthesis' in window) {
-            const u = new SpeechSynthesisUtterance("");
-            window.speechSynthesis.speak(u);
-            window.speechSynthesis.getVoices(); 
-        }
-        
+        const btn = document.getElementById('btn-enter-system'); btn.innerText = "INICIANDO..."; btn.disabled = true;
+        if('speechSynthesis' in window) { const u = new SpeechSynthesisUtterance(""); window.speechSynthesis.speak(u); window.speechSynthesis.getVoices(); }
         try {
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({ audio: {echoCancellation:true}, video: { facingMode: "environment", width:{ideal:1280}, height:{ideal:720} } });
-            } catch(e1) {
-                 stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: { facingMode: "environment" } });
-            }
+            try { 
+                stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: { facingMode: "environment", width:{ideal:1280}, height:{ideal:720} } }); 
+            } 
+            catch(e1) { stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: { facingMode: "environment" } }); }
+            
             const videos = ['scan-video', 'cam-video-bg', 'seed-video', 'preview-video', 'keep-alive-video'];
-            videos.forEach(id => { 
-                const el = document.getElementById(id); 
-                if(el) { el.srcObject = stream; el.play().catch(e=>{}); } 
-            });
-            
-            try {
-                initAudioContext(); 
-                const bg = document.getElementById('bg-noise');
-                if(bg) { bg.volume = 0.1; try { await bg.play(); bg.pause(); } catch(e){} }
-            } catch(e) { console.log("Audio warning", e); }
-            
-            if(GEMINI_API_KEY) validateApiKey(GEMINI_API_KEY);
-            else updateApiStatus(null);
-
+            videos.forEach(id => { const el = document.getElementById(id); if(el) { el.srcObject = stream; el.play().catch(e=>{}); } });
+            try { initAudioContext(); } catch(e) { console.log("Audio warning", e); }
+            if(GEMINI_API_KEY) validateApiKey(GEMINI_API_KEY); else updateApiStatus(null);
             show('s-scan'); scanQR();
-        } catch(e) { 
-            alert("ERROR DE CÁMARA:\n" + e.message);
-            if(btn) { btn.innerText = "REINTENTAR"; btn.disabled = false; }
-        }
+        } catch(e) { alert("ERROR DE CÁMARA:\n" + e.message); if(btn) { btn.innerText = "REINTENTAR"; btn.disabled = false; } }
     };
     
     function initAudioContext() {
         try {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
-            audioCtx = new AudioContext();
-            destNode = audioCtx.createMediaStreamDestination();
-            if(stream) { micSource = audioCtx.createMediaStreamSource(stream); micGainNode = audioCtx.createGain(); micGainNode.gain.value = 0; micSource.connect(micGainNode); micGainNode.connect(destNode); }
-            const bgEl = document.getElementById('bg-noise');
-            if(bgEl) { 
-                bgSourceNode = audioCtx.createMediaElementSource(bgEl); 
-                bgGainNode = audioCtx.createGain(); 
-                // AUMENTO MASIVO DE VOLUMEN (GAIN)
-                bgGainNode.gain.value = 3.0; // ANTES 1.0 -> AHORA 3.0 PARA SATURAR
-                bgSourceNode.connect(bgGainNode); 
-                bgGainNode.connect(destNode); 
-                bgGainNode.connect(audioCtx.destination); 
+            audioCtx = new AudioContext(); destNode = audioCtx.createMediaStreamDestination(); 
+            if(stream) { 
+                micSource = audioCtx.createMediaStreamSource(stream); 
+                micGainNode = audioCtx.createGain(); 
+                micGainNode.gain.value = GAIN_MIC_MUTE; 
+                micSource.connect(micGainNode); 
+                micGainNode.connect(destNode); 
+                
+                analyser = audioCtx.createAnalyser();
+                analyser.fftSize = 64;
+                micSource.connect(analyser); 
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
+                drawVisualizer();
             }
-            
-            document.body.addEventListener('click', function() {
-                if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-            }, {once:true});
+            const bgEl = document.getElementById('bg-noise');
+            if(bgEl) { bgSourceNode = audioCtx.createMediaElementSource(bgEl); bgToLocalGain = audioCtx.createGain(); bgToLocalGain.gain.value = 3.0; bgSourceNode.connect(bgToLocalGain); bgToLocalGain.connect(audioCtx.destination); bgToPeerGain = audioCtx.createGain(); bgToPeerGain.gain.value = 0.05; bgSourceNode.connect(bgToPeerGain); bgToPeerGain.connect(destNode); }
+            document.body.addEventListener('click', function() { if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); }, {once:true});
         } catch(e) {}
     }
 
-    // --- 3. AUTH & QR ---
+    function drawVisualizer() {
+        const canvas = document.getElementById('mic-visualizer');
+        if (!canvas) return requestAnimationFrame(drawVisualizer);
+        const ctx = canvas.getContext('2d');
+        if (!analyser || !ctx) return requestAnimationFrame(drawVisualizer);
+        const bufferLength = analyser.frequencyBinCount; analyser.getByteFrequencyData(dataArray);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const barWidth = (canvas.width / bufferLength) * 2.5; let barHeight; let x = 0;
+        for (let i = 0; i < bufferLength; i++) { barHeight = dataArray[i] / 2; if (barHeight > 5) ctx.fillStyle = '#00ff41'; else ctx.fillStyle = '#333'; ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight); x += barWidth + 1; }
+        requestAnimationFrame(drawVisualizer);
+    }
+
+    // --- AUTH, QR, API ---
     function openAuthModal() { document.getElementById('modal-auth').classList.add('active'); }
     function closeAuthModal() { document.getElementById('modal-auth').classList.remove('active'); }
-    function checkAuth() {
-        if(document.getElementById('auth-pass').value === "OBR1995@") { isStandalone = true; closeAuthModal(); updateMenuUI(); show('s-menu'); } else alert("CLAVE INCORRECTA");
-    }
-    function updateMenuUI() {
-        const micBtn = document.getElementById('btn-mic-pro'); const spiritBtn = document.getElementById('btn-spirit-box');
-        updateStatusUI(!isStandalone);
-        if(isStandalone) micBtn.classList.add('locked'); else micBtn.classList.remove('locked');
-        updateApiStatus(GEMINI_API_KEY ? true : null);
-    }
-    function scanQR() {
-        const v = document.getElementById('scan-video'); const cvs = document.createElement('canvas'); const ctx = cvs.getContext('2d');
-        function loop() {
-            if(document.getElementById('s-scan').classList.contains('active') && v.readyState===4) {
-                cvs.width=v.videoWidth; cvs.height=v.videoHeight; ctx.drawImage(v,0,0);
-                const c = jsQR(ctx.getImageData(0,0,cvs.width,cvs.height).data, cvs.width, cvs.height);
-                if(c) connectPeer(c.data);
-            }
-            requestAnimationFrame(loop);
-        } loop();
-    }
-    function connectPeer(id) { 
-        if(!id) return;
-        hostId = id; 
-        isStandalone = false; 
-        peer = new Peer(); 
-        peer.on('open', () => { 
-            updateMenuUI(); 
-            show('s-menu'); 
-            if(destNode) peer.call(hostId, destNode.stream); 
-        }); 
-        peer.on('error', e => { 
-            console.error(e);
-            alert("Error al conectar con receptor. Reiniciando..."); 
-            location.reload(); 
-        }); 
-    }
-
-    // --- 4. API ---
+    function checkAuth() { if(document.getElementById('auth-pass').value === "OBR1995@") { isStandalone = true; closeAuthModal(); updateMenuUI(); show('s-menu'); } else alert("CLAVE INCORRECTA"); }
+    function updateMenuUI() { const micBtn = document.getElementById('btn-mic-pro'); const spiritBtn = document.getElementById('btn-spirit-box'); updateStatusUI(!isStandalone); if(isStandalone) micBtn.classList.add('locked'); else micBtn.classList.remove('locked'); updateApiStatus(GEMINI_API_KEY ? true : null); }
+    function scanQR() { const v = document.getElementById('scan-video'); const cvs = document.createElement('canvas'); const ctx = cvs.getContext('2d'); function loop() { if(document.getElementById('s-scan').classList.contains('active') && v.readyState===4) { cvs.width=v.videoWidth; cvs.height=v.videoHeight; ctx.drawImage(v,0,0); const c = jsQR(ctx.getImageData(0,0,cvs.width,cvs.height).data, cvs.width, cvs.height); if(c) connectPeer(c.data); } requestAnimationFrame(loop); } loop(); }
+    function connectPeer(id) { if(!id) return; hostId = id; isStandalone = false; peer = new Peer(); peer.on('open', () => { updateMenuUI(); show('s-menu'); if(destNode) peer.call(hostId, destNode.stream); }); peer.on('error', e => { console.error(e); alert("Error al conectar. Reiniciando..."); location.reload(); }); }
     function openApiSettings() { document.getElementById('modal-api').classList.add('active'); }
-    async function saveApiKey() {
-        const k = document.getElementById('input-api-key').value.trim();
-        if(k.length > 10) { localStorage.setItem('obr_api_key_mic', k); GEMINI_API_KEY = k; document.getElementById('modal-api').classList.remove('active'); updateApiStatus(undefined); validateApiKey(k); alert("CLAVE GUARDADA"); }
-    }
-    async function validateApiKey(key) {
-        try { const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: "Ping" }] }] }) }); if(r.ok) updateApiStatus(true); else updateApiStatus(false); } catch(e) { updateApiStatus(false); }
-    }
-    function updateApiStatus(isValid) {
-        const btn = document.getElementById('btn-spirit-box'); const status = document.getElementById('api-status-text');
-        if(!btn) return;
-        if(isValid === true) { btn.classList.remove('locked'); status.innerText = "ACTIVO - LISTO"; status.style.color = "#00ff41"; } else { btn.classList.add('locked'); status.innerText = "REQUIERE API KEY"; status.style.color = "#ff3333"; }
-    }
+    async function saveApiKey() { const k = document.getElementById('input-api-key').value.trim(); if(k.length > 10) { localStorage.setItem('obr_api_key_mic', k); GEMINI_API_KEY = k; document.getElementById('modal-api').classList.remove('active'); updateApiStatus(undefined); validateApiKey(k); alert("CLAVE GUARDADA"); } }
+    async function validateApiKey(key) { try { const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: "Ping" }] }] }) }); if(r.ok) updateApiStatus(true); else updateApiStatus(false); } catch(e) { updateApiStatus(false); } }
+    function updateApiStatus(isValid) { const btn = document.getElementById('btn-spirit-box'); const status = document.getElementById('api-status-text'); if(!btn) return; if(isValid === true) { btn.classList.remove('locked'); status.innerText = "ACTIVO - LISTO"; status.style.color = "#00ff41"; } else { btn.classList.add('locked'); status.innerText = "REQUIERE API KEY"; status.style.color = "#ff3333"; } }
 
-    // --- 5. MODES ---
-    // MODO MICRÓFONO
+    // --- MODES ---
     function enterMicPro() {
-        if(isStandalone) return; 
-        currentMode = 'mic_pro';
-        
-        const vid = document.getElementById('cam-video-bg');
-        if(vid) { vid.style.width = '1px'; vid.style.height = '1px'; vid.style.opacity = '0'; } 
-
-        document.getElementById('bg-static').style.opacity = '1';
-        document.getElementById('hud-layer').style.display = 'none'; 
-        
-        if(micGainNode) micGainNode.gain.value = 1.0; 
+        if(isStandalone) return; currentMode = 'mic_pro'; requestWakeLock(); 
+        clearInterval(passiveInterval); if(recognition) try{recognition.stop();}catch(e){} isProcessing = false;
+        const vid = document.getElementById('cam-video-bg'); if(vid) { vid.style.width = '1px'; vid.style.height = '1px'; vid.style.opacity = '0'; } 
+        document.getElementById('bg-static').style.opacity = '1'; document.getElementById('hud-layer').style.display = 'none'; 
         document.getElementById('bg-noise').pause(); 
-        
-        document.getElementById('ui-mic-overlay').classList.add('active');
-        document.getElementById('ui-spirit').classList.add('hidden');
-        document.getElementById('btn-wordbank').style.display = 'none';
-        
+        if(micGainNode) micGainNode.gain.value = 1.5; 
+        document.getElementById('ui-mic-overlay').classList.add('active'); document.getElementById('ui-spirit').classList.add('hidden'); 
+        document.getElementById('btn-wordbank').style.display = 'none'; 
+        document.getElementById('btn-location-change').style.display = 'none'; 
         document.getElementById('btn-toggle-mode').style.display = 'none'; 
-        
-        stopHudAnimation();
-        show('s-live');
+        document.getElementById('mic-visualizer').style.display = 'block';
+        stopHudAnimation(); show('s-live');
     }
 
-    // MODO SPIRIT
     function enterSpiritBox() {
         if(!GEMINI_API_KEY) { openApiSettings(); return; }
-        currentMode = 'spirit'; document.getElementById('modal-photo').classList.add('active');
-        const pv = document.getElementById('preview-video');
-        if(pv && stream) pv.srcObject = stream;
+        currentMode = 'spirit'; document.getElementById('modal-photo').classList.add('active'); requestWakeLock(); 
+        const pv = document.getElementById('preview-video'); 
+        if(pv && stream) { pv.srcObject = stream; pv.play(); }
     }
     function closePhotoModal() { document.getElementById('modal-photo').classList.remove('active'); }
 
-    // --- 6. LOGICA IA Y CALIBRACION ---
+    // --- IA & CALIBRACION (FIXED SCAN FREEZE) ---
     async function captureSeed() {
-        const status = document.getElementById('seed-status');
-        const context = document.getElementById('place-context').value;
+        const status = document.getElementById('seed-status'); const context = document.getElementById('place-context').value; 
         const vid = document.getElementById('preview-video');
         
         if(!vid || vid.readyState !== 4) { status.innerText = "CÁMARA INICIANDO..."; return; }
         
+        // 1. FREEZE VISUAL (Pausar video)
+        vid.pause();
+        // 2. ACTIVAR EFECTO ESCANER
+        document.getElementById('preview-scan-overlay').style.display = 'block';
+        
         status.innerText = "SINTONIZANDO ENTIDAD..."; updateWordBankIcon('loading'); 
         
-        currentPitch = 0.5 + Math.random() * 0.8; 
-        currentRate = 0.6 + Math.random() * 0.5;
+        const isMale = Math.random() > 0.5;
+        if(isMale) {
+            currentEntityName = MALE_NAMES[Math.floor(Math.random() * MALE_NAMES.length)];
+            currentPitch = 0.6 + Math.random() * 0.3; 
+        } else {
+            currentEntityName = FEMALE_NAMES[Math.floor(Math.random() * FEMALE_NAMES.length)];
+            currentPitch = 1.1 + Math.random() * 0.3; 
+        }
+        currentRate = 0.7 + Math.random() * 0.3;
 
-        const cvs = document.createElement('canvas'); cvs.width = 640; cvs.height = 480;
-        cvs.getContext('2d').drawImage(vid, 0, 0, 640, 480);
-        const b64 = cvs.toDataURL('image/jpeg', 0.6).split(',')[1];
-        window.currentImageB64 = b64; 
+        const cvs = document.createElement('canvas'); cvs.width = 640; cvs.height = 480; cvs.getContext('2d').drawImage(vid, 0, 0, 640, 480);
+        const b64 = cvs.toDataURL('image/jpeg', 0.6).split(',')[1]; window.currentImageB64 = b64; 
 
         try {
-            const prompt = `Analiza la imagen y el contexto: '${context}'. Genera 50 PALABRAS CLAVE ÚNICAS en ESPAÑOL. Deben ser SUSTANTIVOS CONCRETOS y EXPERIENCIAS HUMANAS REALES (ej: Cuchillo, Sangre, Juan, Maria, Grito, Oscuridad). NADA ABSTRACTO. NADA POETICO. NADA RELIGIOSO. Formato: PALABRA|PALABRA.`;
-            
-            const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`, {
-                method:'POST', headers:{'Content-Type':'application/json'},
-                body:JSON.stringify({contents:[{parts:[{text: prompt}, {inline_data:{mime_type:"image/jpeg",data:b64}}]}]})
-            });
+            const prompt = `Analiza la imagen y descripción: '${context}'. Genera 50 palabras ÚNICAS ATERRADORAS. NO FRASES. NO NUMEROS. NO SALUDOS. Solo sustantivos y adjetivos oscuros. Formato: PALABRA|PALABRA`;
+            const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({contents:[{parts:[{text: prompt}, {inline_data:{mime_type:"image/jpeg",data:b64}}]}]}) });
             const d = await r.json();
             const txt = d.candidates?.[0]?.content?.parts?.[0]?.text || "";
-            if(txt) {
-                let words = txt.replace(/\n/g, '|').split('|').map(s => s.trim().replace(/[^a-zA-ZÀ-ÿ0-9 ]/g, '')).filter(s => s.length > 2);
-                if(words.length > 10) spiritScript = words.slice(0, 50);
+            if(txt) { 
+                let words = txt.replace(/\n/g, '|').replace(/[0-9.]/g, '').split('|').map(s => s.trim().replace(/[^a-zA-ZÀ-ÿ ]/g, '')).filter(s => s.length > 2 && !s.includes('PALABRA')); 
+                if(words.length > 10) spiritScript = words.slice(0, 50); 
             }
         } catch(e) { console.log("Backup usado", e); }
         
-        status.innerText = "ENTIDAD FIJADA";
-        updateWordBankIcon('ready');
+        status.innerText = "ENTIDAD: " + currentEntityName; updateWordBankIcon('ready');
         
-        setTimeout(() => {
-            document.getElementById('modal-photo').classList.remove('active');
-            startSpiritBoxActive();
-        }, 800);
+        // WAIT FOR EFFECT THEN START
+        setTimeout(() => { 
+            document.getElementById('modal-photo').classList.remove('active'); 
+            // Reset preview elements for next time
+            document.getElementById('preview-scan-overlay').style.display = 'none';
+            vid.play();
+            startSpiritBoxActive(); 
+        }, 1500);
     }
     
     function startSpiritBoxActive() {
-        document.getElementById('bg-static').style.opacity = '0';
-        // RESTAURAR VIDEO FULL SIZE
-        const vid = document.getElementById('cam-video-bg');
-        if(vid) { vid.style.width = '100%'; vid.style.height = '100%'; vid.style.opacity = '1'; }
-        
-        document.getElementById('hud-layer').style.display = 'block'; 
-        startHudAnimation();
-
-        if(micGainNode) micGainNode.gain.value = 0; 
-        document.getElementById('bg-noise').play().catch(e=>{});
-        
-        const uio = document.getElementById('ui-mic-overlay'); if(uio) uio.classList.remove('active');
-        const uis = document.getElementById('ui-spirit'); if(uis) uis.classList.remove('hidden');
-        
-        document.getElementById('btn-wordbank').style.display = 'block';
-        document.getElementById('btn-toggle-mode').style.display = 'flex';
-        
-        isMicMode = false; isWordBankReady = true;
-        populateDictionary();
-        initSpeech(); startPassiveLoop(); show('s-live');
+        document.getElementById('bg-static').style.opacity = '0'; const vid = document.getElementById('cam-video-bg'); if(vid) { vid.style.width = '100%'; vid.style.height = '100%'; vid.style.opacity = '1'; }
+        document.getElementById('hud-layer').style.display = 'block'; startHudAnimation();
+        document.getElementById('bg-noise').play().catch(e=>{}); 
+        if(micGainNode) micGainNode.gain.value = GAIN_MIC_MUTE; 
+        const uio = document.getElementById('ui-mic-overlay'); if(uio) uio.classList.remove('active'); const uis = document.getElementById('ui-spirit'); if(uis) uis.classList.remove('hidden');
+        document.getElementById('btn-wordbank').style.display = 'flex'; document.getElementById('btn-location-change').style.display = 'flex'; document.getElementById('btn-toggle-mode').style.display = 'flex'; document.getElementById('mic-visualizer').style.display = 'block';
+        isMicMode = false; isWordBankReady = true; populateDictionary(); initSpeech(); startPassiveLoop(); show('s-live');
     }
 
-    function showWordBank() {
-        populateDictionary();
-        document.getElementById('modal-dictionary').classList.add('active');
+    function showWordBank() { populateDictionary(); document.getElementById('modal-dictionary').classList.add('active'); }
+
+    // --- MANUAL LOCATION ---
+    function manualLocationChange() {
+        if(isProcessing || isTuning) return; isTuning = true;
+        const btn = document.getElementById('btn-location-change'); const invoke = document.getElementById('invoke-btn'); const status = document.getElementById('invoke-status');
+        btn.classList.add('tuning'); invoke.classList.add('locked'); invoke.disabled = true;
+        if(micGainNode) micGainNode.gain.value = 0; if(bgToLocalGain) bgToLocalGain.gain.value = 5.0; 
+        status.innerText = "SINTONIZANDO..."; status.style.color = "#ff0055"; 
+        const cvs = document.createElement('canvas'); cvs.width=320; cvs.height=240; const vid = document.getElementById('cam-video-bg');
+        if(vid && vid.readyState >= 2) { cvs.getContext('2d').drawImage(vid,0,0,320,240); window.currentImageB64 = cvs.toDataURL('image/jpeg', 0.5).split(',')[1]; }
+        setTimeout(() => { status.innerText = "CARGANDO FRECUENCIA..."; status.style.color = "#ffae00"; const isMale = Math.random() > 0.5; if(isMale) { currentEntityName = MALE_NAMES[Math.floor(Math.random() * MALE_NAMES.length)]; currentPitch = 0.6 + Math.random() * 0.3; } else { currentEntityName = FEMALE_NAMES[Math.floor(Math.random() * FEMALE_NAMES.length)]; currentPitch = 1.1 + Math.random() * 0.3; } currentRate = 0.7 + Math.random() * 0.3; }, 1500);
+        setTimeout(() => { status.innerText = "ENTIDAD: " + currentEntityName; status.style.color = "#00ff41"; btn.classList.remove('tuning'); invoke.classList.remove('locked'); invoke.disabled = false; if(bgToLocalGain) bgToLocalGain.gain.value = 3.0; isTuning = false; setTimeout(() => { status.innerText = "MANTENER PARA PREGUNTAR"; status.style.color = "#fff"; }, 2000); }, 3000);
     }
 
-    // --- 7. TOGGLE Y HUD ---
+    // --- HUD ---
     function startHudAnimation() {
-        const layer = document.getElementById('hud-layer');
-        clearInterval(hudInterval);
-        hudInterval = setInterval(() => {
-            if(document.hidden || !document.getElementById('s-live').classList.contains('active')) return;
-            const box = document.createElement('div');
-            box.className = 'hud-box';
-            const w = Math.floor(Math.random() * 20 + 10) + '%';
-            const h = Math.floor(Math.random() * 20 + 10) + '%';
-            const top = Math.floor(Math.random() * 80) + '%';
-            const left = Math.floor(Math.random() * 80) + '%';
-            box.style.width = w; box.style.height = h; box.style.top = top; box.style.left = left;
-            layer.appendChild(box);
-            setTimeout(() => box.remove(), 400); 
-        }, 800); 
+        const layer = document.getElementById('hud-layer'); clearInterval(hudInterval);
+        hudInterval = setInterval(() => { if(document.hidden || !document.getElementById('s-live').classList.contains('active')) return; const box = document.createElement('div'); box.className = 'hud-box'; const w = Math.floor(Math.random() * 20 + 10) + '%'; const h = Math.floor(Math.random() * 20 + 10) + '%'; const top = Math.floor(Math.random() * 80) + '%'; const left = Math.floor(Math.random() * 80) + '%'; box.style.width = w; box.style.height = h; box.style.top = top; box.style.left = left; layer.appendChild(box); setTimeout(() => box.remove(), 400); }, 800); 
     }
-
-    function stopHudAnimation() {
-        clearInterval(hudInterval);
-        document.getElementById('hud-layer').innerHTML = '';
-    }
+    function stopHudAnimation() { clearInterval(hudInterval); document.getElementById('hud-layer').innerHTML = ''; }
 
     window.toggleSpiritVox = function() { 
-        if(currentMode !== 'spirit') return;
-        isMicMode = !isMicMode;
-        const icon = document.getElementById('toggle-icon');
-        const btn = document.getElementById('btn-toggle-mode');
-        const uiSpirit = document.getElementById('ui-spirit');
-        const vid = document.getElementById('cam-video-bg');
-        const uio = document.getElementById('ui-mic-overlay');
-
+        if(currentMode !== 'spirit') return; isMicMode = !isMicMode;
+        const icon = document.getElementById('toggle-icon'); const btn = document.getElementById('btn-toggle-mode'); const uiSpirit = document.getElementById('ui-spirit'); const vid = document.getElementById('cam-video-bg'); const uio = document.getElementById('ui-mic-overlay');
         if(isMicMode) {
-            // CAMBIO A MIC: 
-            icon.className = "fas fa-microphone"; btn.classList.add('mic-active');
-            
-            document.getElementById('bg-static').style.opacity = '1'; 
-            if(vid) { vid.style.width = '1px'; vid.style.height = '1px'; vid.style.opacity = '0'; } // MANTENER STREAM VIVO
-            
-            document.getElementById('hud-layer').style.display = 'none'; stopHudAnimation();
-            document.getElementById('bg-noise').pause(); 
-            if(micGainNode) micGainNode.gain.value = 1.0;
-            
-            uiSpirit.classList.add('hidden');
-            uio.classList.add('active'); // MOSTRAR MICROFONO GRANDE
-
-            clearInterval(passiveInterval);
+            icon.className = "fas fa-microphone"; btn.classList.add('mic-active'); document.getElementById('bg-static').style.opacity = '1'; if(vid) { vid.style.width = '1px'; vid.style.height = '1px'; vid.style.opacity = '0'; } document.getElementById('hud-layer').style.display = 'none'; stopHudAnimation(); document.getElementById('bg-noise').pause(); if(micGainNode) micGainNode.gain.value = 1.5; uiSpirit.classList.add('hidden'); uio.classList.add('active'); 
+            document.getElementById('btn-wordbank').style.display = 'none'; document.getElementById('btn-location-change').style.display = 'none'; clearInterval(passiveInterval); 
         } else {
-            // CAMBIO A SPIRIT
-            icon.className = "fas fa-ghost"; btn.classList.remove('mic-active');
-            
-            document.getElementById('bg-static').style.opacity = '0'; 
-            if(vid) { vid.style.width = '100%'; vid.style.height = '100%'; vid.style.opacity = '1'; } // RESTAURAR VIDEO
-            
-            document.getElementById('hud-layer').style.display = 'block'; startHudAnimation();
-            document.getElementById('bg-noise').play(); 
-            if(micGainNode) micGainNode.gain.value = 0;
-            
-            uiSpirit.classList.remove('hidden');
-            uio.classList.remove('active'); // OCULTAR MICROFONO GRANDE
-
-            startPassiveLoop();
+            icon.className = "fas fa-ghost"; btn.classList.remove('mic-active'); document.getElementById('bg-static').style.opacity = '0'; if(vid) { vid.style.width = '100%'; vid.style.height = '100%'; vid.style.opacity = '1'; } document.getElementById('hud-layer').style.display = 'block'; startHudAnimation(); document.getElementById('bg-noise').play(); if(micGainNode) micGainNode.gain.value = GAIN_MIC_MUTE; uiSpirit.classList.remove('hidden'); uio.classList.remove('active'); 
+            document.getElementById('btn-wordbank').style.display = 'flex'; document.getElementById('btn-location-change').style.display = 'flex'; startPassiveLoop();
         }
     };
     
-    // --- 8. RECONOCIMIENTO Y PTT ---
+    // --- RECONOCIMIENTO ---
     function pressFinger() {
-        if(isProcessing || isMicMode || !isWordBankReady) return;
-        isProcessing = true;
-        document.getElementById('invoke-btn').classList.add('active');
-        document.getElementById('invoke-status').innerText = "ESCUCHANDO...";
-        
-        clearInterval(passiveInterval);
-
-        const vid = document.getElementById('seed-video');
-        const cvs = document.createElement('canvas'); cvs.width=320; cvs.height=240;
-        if(vid && vid.readyState === 4) {
-            cvs.getContext('2d').drawImage(vid,0,0,320,240);
-            window.currentImageB64 = cvs.toDataURL('image/jpeg', 0.5).split(',')[1];
-        }
-
-        if(micGainNode) micGainNode.gain.value = 1.0; 
-        if(recognition) {
-            try { recognition.start(); } catch(e) { 
-                console.error(e); 
-                isProcessing=false; 
-                triggerFallback(); // Error al iniciar
-            }
-        }
+        if(isProcessing || isMicMode || !isWordBankReady || isTuning) return; isProcessing = true; 
+        window.speechSynthesis.cancel();
+        document.getElementById('invoke-btn').classList.add('active'); document.getElementById('invoke-status').innerText = "ESCUCHANDO..."; 
+        clearInterval(passiveInterval); 
+        const vid = document.getElementById('cam-video-bg'); 
+        const cvs = document.createElement('canvas'); cvs.width=320; cvs.height=240; 
+        if(vid && vid.readyState >= 2) { cvs.getContext('2d').drawImage(vid,0,0,320,240); window.currentImageB64 = cvs.toDataURL('image/jpeg', 0.5).split(',')[1]; }
+        if(micGainNode) micGainNode.gain.value = GAIN_MIC_TALK; 
+        if(recognition) { try { recognition.start(); } catch(e) { console.error(e); isProcessing=false; triggerFallback(); } }
     }
 
     function releaseFinger() {
-        if(isMicMode) return;
-        document.getElementById('invoke-btn').classList.remove('active');
-        document.getElementById('invoke-status').innerText = "MANTENER PARA PREGUNTAR";
-        
-        if(recognition) { 
-            recognition.stop(); 
-        }
-        if(micGainNode) micGainNode.gain.value = 0; 
-        
-        // Timeout de seguridad si no hay respuesta en 3 seg
-        setTimeout(() => { 
-            if(isProcessing) { 
-                triggerFallback(); 
-            } 
-        }, 4000); 
+        if(isMicMode) return; document.getElementById('invoke-btn').classList.remove('active'); document.getElementById('invoke-status').innerText = "MANTENER PARA PREGUNTAR";
+        if(recognition) recognition.stop(); if(micGainNode) micGainNode.gain.value = GAIN_MIC_MUTE; setTimeout(() => { if(isProcessing) { triggerFallback(); } }, 4000); 
     }
 
-    // FUNCION FALLBACK: DESBLOQUEAR HUELLA SI NO HAY TEXTO
     function triggerFallback() {
-        if(!isProcessing) return;
-        console.log("Fallback Triggered");
-        const word = spiritScript[Math.floor(Math.random() * spiritScript.length)];
-        showSpiritText(word); 
-        speakWithEcho(word);
-        isProcessing = false;
-        startPassiveLoop();
+        if(!isProcessing) return; const word = spiritScript[Math.floor(Math.random() * spiritScript.length)]; showSpiritText(word); speakWithEcho(word); isProcessing = false; startPassiveLoop();
     }
 
     function initSpeech() {
         if('webkitSpeechRecognition' in window) {
-            recognition = new webkitSpeechRecognition();
-            recognition.lang = 'es-ES'; recognition.continuous = false; recognition.interimResults = false;
-            
+            recognition = new webkitSpeechRecognition(); recognition.lang = 'es-ES'; recognition.continuous = false; recognition.interimResults = false;
             recognition.onresult = async e => {
-                const q = e.results[0][0].transcript;
-                console.log("Pregunta:", q);
+                let rawText = e.results[0][0].transcript.trim();
+                let cleanText = rawText.charAt(0).toUpperCase() + rawText.slice(1);
                 
-                if(!q || q.trim() === "") {
-                    triggerFallback(); // Texto vacio
-                    return;
+                const questionStarters = ["QUE", "COMO", "CUANDO", "DONDE", "QUIEN", "POR", "CUANTOS", "ERES", "ESTAS", "HAY", "PUEDES", "SABES"];
+                const firstWord = cleanText.split(' ')[0].toUpperCase().replace(/[^A-Z]/g, '');
+                if (questionStarters.includes(firstWord)) {
+                    if (!cleanText.endsWith('?')) cleanText += '?';
+                    if (!cleanText.startsWith('¿')) cleanText = '¿' + cleanText;
                 }
 
+                document.getElementById('user-transcript').innerText = `> ${cleanText}`;
+                
                 try {
-                    // PROMPT LOBOTOMIZADO EXTREMO
-                    const prompt = `Rol: Espíritu Humano. Pregunta: "${q}". 
-                    1. Si preguntan NOMBRE: Responde solo UN NOMBRE PROPIO COMÚN (ej: JUAN, PEDRO, ANA). NADA MAS.
-                    2. Si preguntan QUÉ PASÓ/CAUSA: Responde solo EL HECHO (ej: ACCIDENTE, ASESINATO, CAÍDA). NADA MAS.
-                    3. Si preguntan CUÁNTOS: Responde solo EL NÚMERO (ej: TRES, UNO). NADA MAS.
-                    REGLA GENERAL: MÁXIMO 1 o 2 PALABRAS. SECO. DIRECTO. SIN ADJETIVOS. NO INVENTES POESÍA.`;
+                    const prompt = `INSTRUCCION SYSTEMA: ERES EL ESPIRITU "${currentEntityName}". ESTAS MUERTO. RESPONDE A "${cleanText}".
+                    REGLAS:
+                    1. NO USES "SOY", "ME LLAMO", "ESTOY", "HOLA", "ENTENDIDO", "CLARO".
+                    2. SI PREGUNTAN NOMBRE -> SOLO DI "${currentEntityName}".
+                    3. SI PREGUNTAN DONDE -> "AQUI", "ATRAS", "CERCA".
+                    4. SI PREGUNTAN QUE PASO -> "MUERTE", "ACCIDENTE", "DOLOR".
+                    5. CUALQUIER OTRA -> MAXIMO 2 PALABRAS.
+                    RESPONDE AHORA.`;
                     
-                    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`, {
-                        method:'POST', headers:{'Content-Type':'application/json'},
-                        body:JSON.stringify({contents:[{parts:[{text:prompt},{inline_data:{mime_type:"image/jpeg",data:window.currentImageB64 || ""}}]}]})
-                    });
+                    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({contents:[{parts:[{text:prompt},{inline_data:{mime_type:"image/jpeg",data:window.currentImageB64 || ""}}]}]}) });
                     const d = await r.json(); 
                     let ans = d.candidates[0].content.parts[0].text.toUpperCase();
                     
-                    // Limpieza
-                    ans = ans.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/[^A-ZÑÁÉÍÓÚ ]/g, '');
-                    // Forzar máximo 2 palabras
-                    const words = ans.split(' ').filter(w => w.length > 0);
-                    if(words.length > 2) ans = words.slice(0, 2).join(' ');
-
-                    showSpiritText(ans); speakWithEcho(ans);
-                    setTimeout(startPassiveLoop, 15000);
+                    const banned = ["ENTENDIDO", "CLARO", "HOLA", "SOY", "ME LLAMO", "ESTOY", "PREGUNTA", "RESPUESTA"];
+                    banned.forEach(b => ans = ans.replace(b, ""));
+                    ans = ans.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/[^A-ZÑÁÉÍÓÚ ]/g, '').trim();
                     
-                } catch(x) { 
-                    console.error(x);
-                    triggerFallback(); // Fallo de API
-                }
-                isProcessing = false; 
+                    if(ans.length < 2) { triggerFallback(); }
+                    else {
+                        const words = ans.split(' ').filter(w => w.length > 0); if(words.length > 3) ans = words.slice(0, 3).join(' '); 
+                        showSpiritText(ans); speakWithEcho(ans); setTimeout(startPassiveLoop, 15000);
+                        setTimeout(() => { document.getElementById('user-transcript').innerText = ""; }, 3000);
+                    }
+                } catch(x) { console.error(x); triggerFallback(); } isProcessing = false; 
             };
-            
-            recognition.onerror = (e) => { 
-                console.log("Error Speech", e.error);
-                if(e.error === 'no-speech' || e.error === 'network') {
-                    triggerFallback();
-                } else {
-                    isProcessing = false; 
-                    startPassiveLoop(); 
-                }
-            };
-            recognition.onend = () => { 
-                // Ya manejado por releaseFinger y timeouts
-            };
+            recognition.onerror = (e) => { if(e.error === 'no-speech' || e.error === 'network') triggerFallback(); else { isProcessing = false; startPassiveLoop(); } };
+            recognition.onend = () => { };
         }
     }
 
     function startPassiveLoop() {
         clearInterval(passiveInterval);
-        // INTERVALO DE 4 A 7 SEGUNDOS (Acelerado)
-        passiveInterval = setInterval(() => {
-            if(!isProcessing && !isMicMode && document.getElementById('s-live').classList.contains('active')) {
-                const word = spiritScript[Math.floor(Math.random() * spiritScript.length)];
-                showSpiritText(word); speakWithEcho(word);
-            }
-        }, 4000 + Math.random()*3000);
+        passiveInterval = setInterval(() => { if(!isProcessing && !isMicMode && document.getElementById('s-live').classList.contains('active')) { const word = spiritScript[Math.floor(Math.random() * spiritScript.length)]; showSpiritText(word); speakWithEcho(word); } }, 8000 + Math.random()*7000);
     }
 
-    function showSpiritText(t) {
-        const el = document.getElementById('spirit-text');
-        if(el) {
-            el.innerText = t;
-            el.style.opacity = 1;
-            setTimeout(()=>el.style.opacity=0, 4000);
-        }
-    }
+    function showSpiritText(t) { const el = document.getElementById('spirit-text'); if(el) { el.innerText = t; el.style.opacity = 1; setTimeout(()=>el.style.opacity=0, 4000); } }
 
     function speakWithEcho(text) {
         if('speechSynthesis' in window) {
             window.speechSynthesis.cancel();
+            if(bgToLocalGain) bgToLocalGain.gain.value = 0.2; 
+            if(micGainNode && !isMicMode) { micGainNode.gain.value = GAIN_MIC_LISTEN_AI; }
             
-            // REDUCIR MENOS EL RUIDO DE FONDO (LUCHA POR SALIR)
-            if(bgGainNode) bgGainNode.gain.value = 0.8; // Antes bajaba a 0.2, ahora se queda en 0.8 (fuerte)
-            
-            // CAPA 1: Voz Normal
-            const u1 = new SpeechSynthesisUtterance(text); u1.lang = 'es-ES'; u1.pitch = currentPitch; u1.rate = currentRate; u1.volume = 1.0;
-            
-            // CAPA 2: Eco Grave
-            const u2 = new SpeechSynthesisUtterance(text); u2.lang = 'es-ES'; u2.pitch = 0.5; u2.rate = 0.9; u2.volume = 1.0; 
-            
-            // SOLO 2 VOCES (Eliminada la 3ra voz gutural)
+            const safeText = text.toLowerCase();
+            const u1 = new SpeechSynthesisUtterance(safeText); u1.lang = 'es-ES'; u1.pitch = currentPitch; u1.rate = currentRate; u1.volume = 1.0;
+            u1.onend = function() { setTimeout(() => { if(!isProcessing && !isMicMode) { if(bgToLocalGain) bgToLocalGain.gain.value = 3.0; if(micGainNode) micGainNode.gain.value = GAIN_MIC_MUTE; } }, 500); };
             window.speechSynthesis.speak(u1); 
-            window.speechSynthesis.speak(u2);
-
-            // Restaurar ruido al terminar
-            setTimeout(() => { if(!isProcessing && !isMicMode && bgGainNode) bgGainNode.gain.value = 3.0; }, 2500);
         }
     }
     
