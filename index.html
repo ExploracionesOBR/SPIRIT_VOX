@@ -8,7 +8,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
-    <title>CEL SARRA DEL PEÑA</title>
+    <title>OBR LINK v41.7 FINAL</title>
     
     <link rel="apple-touch-icon" href="obr-logo.png">
     <link rel="icon" type="image/png" href="obr-logo.png">
@@ -47,16 +47,24 @@
             -webkit-touch-callout: default !important;
         }
 
+        #battery-saver {
+            position: fixed; inset: 0; z-index: 9999;
+            background: rgba(0, 0, 0, 0.65);
+            pointer-events: none;
+            display: none;
+        }
+
         #bg-static { 
             position: fixed; inset: 0; z-index: -10; 
             background-image: url('fondo_pantalla.jpg'); background-size: cover; background-position: center; 
             opacity: 1; transition: opacity 0.5s ease;
         }
         
+        /* VIDEO OCULTO POR DEFECTO O REDUCIDO */
         #cam-video-bg {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: -15;
+            position: fixed; top: 0; left: 0; width: 1px; height: 1px; object-fit: cover; z-index: -15;
             opacity: 0; transition: opacity 0.5s;
-            filter: contrast(1.2) brightness(1.1) grayscale(0.8) sepia(0.2); 
+            /* FILTROS ELIMINADOS PARA RENDIMIENTO, SE APLICAN EN CANVAS SI ES NECESARIO */
         }
 
         #hud-layer {
@@ -224,7 +232,9 @@
 </head>
 <body oncontextmenu="return false;">
 
+    <div id="battery-saver"></div>
     <div id="bg-static"></div>
+    <!-- VIDEO DE FONDO SIEMPRE OCULTO (1x1) PARA RENDIMIENTO, SOLO PARA IA -->
     <video id="cam-video-bg" playsinline autoplay muted loop></video>
     <div id="hud-layer"></div>
 
@@ -235,7 +245,7 @@
     <div id="s-login" class="screen active">
         <img src="obr-logo.png" class="w-32 mb-6 animate-pulse" onerror="this.style.display='none'">
         <h1 class="text-3xl font-bold tracking-widest text-white mb-2">OBR LINK</h1>
-        <p class="text-xs text-gray-400 font-mono mb-10">SISTEMA RESTAURADO v41.6</p>
+        <p class="text-xs text-gray-400 font-mono mb-10">SISTEMA RESTAURADO v41.7</p>
         <button id="btn-enter-system" class="app-btn justify-center font-bold tracking-widest" onclick="window.startSystem()">INICIAR SISTEMA</button>
     </div>
 
@@ -247,7 +257,7 @@
             <!-- EFECTO ESCANER -->
             <div class="scan-overlay" style="display: block;"></div> 
         </div>
-        <div class="absolute top-24 text-center w-full text-cyan-400 font-bold text-sm" style="z-index:20;">ESCANEAR QR DETECTOR</div>
+        <div id="scan-text-status" class="absolute top-24 text-center w-full text-cyan-400 font-bold text-sm" style="z-index:20;">ESCANEAR QR DETECTOR</div>
         <div id="btn-offline-access" onclick="openAuthModal()" style="position: absolute; top: 20px; right: 20px; z-index: 60; color: rgba(255,255,255,0.3); font-size: 1.5rem;"><i class="fas fa-cog"></i></div>
         <button onclick="location.reload()" class="absolute bottom-20 text-red-500 text-xs font-bold border-b border-red-500 pb-1" style="z-index:20;">CANCELAR OPERACIÓN</button>
     </div>
@@ -363,6 +373,7 @@
     let currentEntityName = "DESCONOCIDO";
     let isTuning = false;
     let isHoldingButton = false; // FLAG DE PRESION PARA CELULAR
+    let isConnecting = false; // FLAG CONEXION
     
     const MALE_NAMES = ["JUAN", "PEDRO", "LUIS", "JOSE", "CARLOS", "MIGUEL", "DAVID", "JORGE", "MANUEL", "ANTONIO"];
     const FEMALE_NAMES = ["ANA", "MARIA", "CARMEN", "ISABEL", "ELENA", "LUCIA", "SOFIA", "LAURA", "MARTA", "ROSA"];
@@ -370,6 +381,7 @@
 
     let isStandalone = false;
     let hudInterval; 
+    let wakeLock = null;
     window.currentImageB64 = ""; 
 
     const GAIN_MIC_TALK = 2.0; 
@@ -390,21 +402,28 @@
 
     // --- SYSTEM START ---
     window.startSystem = async function() {
-        const btn = document.getElementById('btn-enter-system'); btn.innerText = "INICIANDO..."; btn.disabled = true;
+        const btn = document.getElementById('btn-enter-system'); btn.innerText = "SOLICITANDO ACCESO..."; btn.disabled = true;
+        
+        // DESBLOQUEO DE AUDIO IOS/ANDROID
         if('speechSynthesis' in window) { const u = new SpeechSynthesisUtterance(""); window.speechSynthesis.speak(u); window.speechSynthesis.getVoices(); }
+        
         try {
+            // SOLICITUD FORZADA DE PERMISOS (320p PARA RENDIMIENTO)
             try { 
-                // SOLICITUD DE VIDEO SD (480p) PARA EVITAR FREEZING EN CELULAR
-                stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: { facingMode: "environment", width: { ideal: 640 }, height: { ideal: 480 } } }); 
+                stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: { facingMode: "environment", width: 320, height: 240 } }); 
             } 
             catch(e1) { stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: { facingMode: "environment" } }); }
             
             const videos = ['scan-video', 'cam-video-bg', 'seed-video', 'preview-video', 'keep-alive-video'];
             videos.forEach(id => { const el = document.getElementById(id); if(el) { el.srcObject = stream; el.play().catch(e=>{}); } });
+            
+            // INICIALIZAR AUDIO CONTEXT INMEDIATAMENTE
             try { initAudioContext(); } catch(e) { console.log("Audio warning", e); }
+            
             if(GEMINI_API_KEY) validateApiKey(GEMINI_API_KEY); else updateApiStatus(null);
+            
             show('s-scan'); scanQR();
-        } catch(e) { alert("ERROR DE CÁMARA:\n" + e.message); if(btn) { btn.innerText = "REINTENTAR"; btn.disabled = false; } }
+        } catch(e) { alert("ERROR: SE REQUIERE CÁMARA Y MICRÓFONO.\n" + e.message); if(btn) { btn.innerText = "REINTENTAR"; btn.disabled = false; } }
     };
     
     function initAudioContext() {
@@ -427,7 +446,7 @@
             const bgEl = document.getElementById('bg-noise');
             if(bgEl) { bgSourceNode = audioCtx.createMediaElementSource(bgEl); bgToLocalGain = audioCtx.createGain(); bgToLocalGain.gain.value = 3.0; bgSourceNode.connect(bgToLocalGain); bgToLocalGain.connect(audioCtx.destination); bgToPeerGain = audioCtx.createGain(); bgToPeerGain.gain.value = 0.05; bgSourceNode.connect(bgToPeerGain); bgToPeerGain.connect(destNode); }
             
-            // REANUDAR AUDIO CON CUALQUIER TOQUE
+            // EVENTOS PARA REANUDAR AUDIO EN MOVIL
             document.body.addEventListener('touchstart', function() { if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); }, {once:true});
             document.body.addEventListener('click', function() { if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); }, {once:true});
         } catch(e) {}
@@ -450,8 +469,61 @@
     function closeAuthModal() { document.getElementById('modal-auth').classList.remove('active'); }
     function checkAuth() { if(document.getElementById('auth-pass').value === "OBR1995@") { isStandalone = true; closeAuthModal(); updateMenuUI(); show('s-menu'); } else alert("CLAVE INCORRECTA"); }
     function updateMenuUI() { const micBtn = document.getElementById('btn-mic-pro'); const spiritBtn = document.getElementById('btn-spirit-box'); updateStatusUI(!isStandalone); if(isStandalone) micBtn.classList.add('locked'); else micBtn.classList.remove('locked'); updateApiStatus(GEMINI_API_KEY ? true : null); }
-    function scanQR() { const v = document.getElementById('scan-video'); const cvs = document.createElement('canvas'); const ctx = cvs.getContext('2d'); function loop() { if(document.getElementById('s-scan').classList.contains('active') && v.readyState===4) { cvs.width=v.videoWidth; cvs.height=v.videoHeight; ctx.drawImage(v,0,0); const c = jsQR(ctx.getImageData(0,0,cvs.width,cvs.height).data, cvs.width, cvs.height); if(c) connectPeer(c.data); } requestAnimationFrame(loop); } loop(); }
-    function connectPeer(id) { if(!id) return; hostId = id; isStandalone = false; peer = new Peer(); peer.on('open', () => { updateMenuUI(); show('s-menu'); if(destNode) peer.call(hostId, destNode.stream); }); peer.on('error', e => { console.error(e); alert("Error al conectar. Reiniciando..."); location.reload(); }); }
+    
+    // --- LÓGICA DE CONEXIÓN QR MEJORADA ---
+    function scanQR() { 
+        const v = document.getElementById('scan-video'); 
+        const cvs = document.createElement('canvas'); 
+        const ctx = cvs.getContext('2d'); 
+        const status = document.getElementById('scan-text-status');
+
+        function loop() { 
+            if(isConnecting) return; // STOP SCANNING IF CONNECTING
+
+            if(document.getElementById('s-scan').classList.contains('active') && v.readyState===4) { 
+                cvs.width=v.videoWidth; cvs.height=v.videoHeight; ctx.drawImage(v,0,0); 
+                const c = jsQR(ctx.getImageData(0,0,cvs.width,cvs.height).data, cvs.width, cvs.height); 
+                if(c) {
+                    // QR DETECTADO
+                    isConnecting = true;
+                    status.innerText = "VINCULANDO CON DETECTOR...";
+                    status.style.color = "#00ff41";
+                    connectPeer(c.data);
+                }
+            } 
+            if(!isConnecting) requestAnimationFrame(loop); 
+        } 
+        loop(); 
+    }
+
+    function connectPeer(id) { 
+        if(!id) return;
+        hostId = id; 
+        isStandalone = false; 
+        peer = new Peer(); 
+        
+        peer.on('open', () => { 
+            console.log("Peer Open");
+            // CONEXION LISTA - ENTRAR AL MENU
+            updateMenuUI(); 
+            show('s-menu'); 
+            
+            // INICIAR LLAMADA DE AUDIO INMEDIATAMENTE
+            if(destNode) {
+                const call = peer.call(hostId, destNode.stream);
+                console.log("Call Started");
+            }
+        }); 
+        
+        peer.on('error', e => { 
+            console.error(e); 
+            alert("Error de conexión. Intenta escanear de nuevo."); 
+            isConnecting = false;
+            document.getElementById('scan-text-status').innerText = "ESCANEAR QR DETECTOR";
+            location.reload(); 
+        }); 
+    }
+    
     function openApiSettings() { document.getElementById('modal-api').classList.add('active'); }
     async function saveApiKey() { const k = document.getElementById('input-api-key').value.trim(); if(k.length > 10) { localStorage.setItem('obr_api_key_mic', k); GEMINI_API_KEY = k; document.getElementById('modal-api').classList.remove('active'); updateApiStatus(undefined); validateApiKey(k); alert("CLAVE GUARDADA"); } }
     async function validateApiKey(key) { try { const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: "Ping" }] }] }) }); if(r.ok) updateApiStatus(true); else updateApiStatus(false); } catch(e) { updateApiStatus(false); } }
@@ -461,7 +533,10 @@
     function enterMicPro() {
         if(isStandalone) return; currentMode = 'mic_pro'; requestWakeLock(); 
         clearInterval(passiveInterval); if(recognition) try{recognition.stop();}catch(e){} isProcessing = false;
+        
+        // CAMARA MINIMA PARA RENDIMIENTO
         const vid = document.getElementById('cam-video-bg'); if(vid) { vid.style.width = '1px'; vid.style.height = '1px'; vid.style.opacity = '0'; } 
+        
         document.getElementById('bg-static').style.opacity = '1'; document.getElementById('hud-layer').style.display = 'none'; 
         document.getElementById('bg-noise').pause(); 
         if(micGainNode) micGainNode.gain.value = 1.5; 
@@ -531,7 +606,10 @@
     }
     
     function startSpiritBoxActive() {
-        document.getElementById('bg-static').style.opacity = '0'; const vid = document.getElementById('cam-video-bg'); if(vid) { vid.style.width = '100%'; vid.style.height = '100%'; vid.style.opacity = '1'; }
+        document.getElementById('bg-static').style.opacity = '0'; 
+        // CAMARA FANTASMA (1x1) PARA SPIRIT BOX (RENDIMIENTO)
+        const vid = document.getElementById('cam-video-bg'); if(vid) { vid.style.width = '1px'; vid.style.height = '1px'; vid.style.opacity = '0'; }
+        
         document.getElementById('hud-layer').style.display = 'block'; startHudAnimation();
         document.getElementById('bg-noise').play().catch(e=>{}); 
         if(micGainNode) micGainNode.gain.value = GAIN_MIC_MUTE; 
@@ -549,8 +627,11 @@
         btn.classList.add('tuning'); invoke.classList.add('locked'); invoke.disabled = true;
         if(micGainNode) micGainNode.gain.value = 0; if(bgToLocalGain) bgToLocalGain.gain.value = 5.0; 
         status.innerText = "SINTONIZANDO..."; status.style.color = "#ff0055"; 
+        
+        // CAPTURA DE CAMARA FANTASMA
         const cvs = document.createElement('canvas'); cvs.width=320; cvs.height=240; const vid = document.getElementById('cam-video-bg');
         if(vid && vid.readyState >= 2) { cvs.getContext('2d').drawImage(vid,0,0,320,240); window.currentImageB64 = cvs.toDataURL('image/jpeg', 0.5).split(',')[1]; }
+        
         setTimeout(() => { status.innerText = "CARGANDO FRECUENCIA..."; status.style.color = "#ffae00"; const isMale = Math.random() > 0.5; if(isMale) { currentEntityName = MALE_NAMES[Math.floor(Math.random() * MALE_NAMES.length)]; currentPitch = 0.6 + Math.random() * 0.3; } else { currentEntityName = FEMALE_NAMES[Math.floor(Math.random() * FEMALE_NAMES.length)]; currentPitch = 1.1 + Math.random() * 0.3; } currentRate = 0.7 + Math.random() * 0.3; }, 1500);
         setTimeout(() => { status.innerText = "ENTIDAD: " + currentEntityName; status.style.color = "#00ff41"; btn.classList.remove('tuning'); invoke.classList.remove('locked'); invoke.disabled = false; if(bgToLocalGain) bgToLocalGain.gain.value = 3.0; isTuning = false; setTimeout(() => { status.innerText = "MANTENER PARA PREGUNTAR"; status.style.color = "#fff"; }, 2000); }, 3000);
     }
@@ -578,11 +659,9 @@
     function pressFinger() {
         if(isProcessing || isMicMode || !isWordBankReady || isTuning) return; 
         isProcessing = true; 
-        isHoldingButton = true; // FLAG ACTIVADA
+        isHoldingButton = true; 
         
         window.speechSynthesis.cancel();
-        
-        // ASEGURAR QUE AUDIO CONTEXT ESTA VIVO
         if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
 
         document.getElementById('invoke-btn').classList.add('active'); document.getElementById('invoke-status').innerText = "ESCUCHANDO..."; 
@@ -598,7 +677,7 @@
     }
 
     function releaseFinger() {
-        isHoldingButton = false; // FLAG DESACTIVADA
+        isHoldingButton = false; 
         if(isMicMode) return; 
         
         document.getElementById('invoke-btn').classList.remove('active'); document.getElementById('invoke-status').innerText = "MANTENER PARA PREGUNTAR";
@@ -611,12 +690,7 @@
 
     function startRecognitionSafely() {
         if(recognition) {
-            try { 
-                recognition.start(); 
-            } catch(e) { 
-                console.error("Rec start error:", e); 
-                // SI YA ESTA CORRIENDO, NO HACER NADA
-            }
+            try { recognition.start(); } catch(e) { console.error("Rec start error:", e); }
         }
     }
 
@@ -628,7 +702,7 @@
         if('webkitSpeechRecognition' in window) {
             recognition = new webkitSpeechRecognition(); 
             recognition.lang = 'es-ES'; 
-            recognition.continuous = false; // MODO COMANDO
+            recognition.continuous = false; 
             recognition.interimResults = false;
             
             recognition.onresult = async e => {
@@ -674,7 +748,6 @@
             recognition.onerror = (e) => { 
                 console.log("Rec Error:", e.error);
                 if (isHoldingButton && (e.error === 'no-speech' || e.error === 'network')) {
-                    // SI HUBO SILENCIO PERO SIGUE PRESIONANDO, REINICIAR (ANTI-CORTE)
                     recognition.stop();
                     setTimeout(() => startRecognitionSafely(), 100);
                 } else if (!isHoldingButton) {
@@ -683,10 +756,7 @@
             };
             
             recognition.onend = () => { 
-                // SI TERMINO PERO SIGUE PRESIONANDO, REINICIAR
-                if (isHoldingButton) {
-                    startRecognitionSafely();
-                }
+                if (isHoldingButton) { startRecognitionSafely(); }
             };
         }
     }
@@ -716,4 +786,3 @@
 </script>
 </body>
 </html>
-
