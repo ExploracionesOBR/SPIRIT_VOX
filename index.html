@@ -8,7 +8,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
-    <title>OBR LINK v42.3 VAGUE</title>
+    <title>OBR LINK v44.0 FINAL</title>
     
     <link rel="apple-touch-icon" href="obr-logo.png">
     <link rel="icon" type="image/png" href="obr-logo.png">
@@ -60,10 +60,10 @@
             opacity: 1; transition: opacity 0.5s ease;
         }
         
-        /* VIDEO OCULTO POR DEFECTO O REDUCIDO */
         #cam-video-bg {
             position: fixed; top: 0; left: 0; width: 1px; height: 1px; object-fit: cover; z-index: -15;
             opacity: 0; transition: opacity 0.5s;
+            filter: contrast(1.2) brightness(1.1) grayscale(0.8) sepia(0.2); 
         }
 
         #hud-layer {
@@ -101,7 +101,6 @@
         }
         #scan-video { width: 100%; height: 100%; object-fit: cover; opacity: 1; }
         
-        /* EFECTO DE ESCANEO */
         .scan-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: linear-gradient(to bottom, transparent 40%, rgba(0, 243, 255, 0.4) 50%, transparent 60%);
@@ -124,7 +123,6 @@
             z-index: 60; cursor: pointer;
         }
 
-        /* BOTONES DISCRETOS (TRANSLUCIDOS) */
         .discrete-btn {
             position: absolute; z-index: 60;
             width: 45px; height: 45px; font-size: 1.2rem;
@@ -221,7 +219,6 @@
         .signal-wave:nth-child(2) { animation-delay: 0.6s; }
         .signal-wave:nth-child(3) { animation-delay: 1.2s; }
         
-        /* VISUALIZADOR DE AUDIO PEQUEÑO */
         #mic-visualizer { width: 50px; height: 20px; margin-left: 10px; display: none; }
 
         @keyframes ripple { 0% { width: 100%; height: 100%; opacity: 0.8; border-width: 4px; } 100% { width: 250%; height: 250%; opacity: 0; border-width: 0px; } }
@@ -243,7 +240,7 @@
     <div id="s-login" class="screen active">
         <img src="obr-logo.png" class="w-32 mb-6 animate-pulse" onerror="this.style.display='none'">
         <h1 class="text-3xl font-bold tracking-widest text-white mb-2">OBR LINK</h1>
-        <p class="text-xs text-gray-400 font-mono mb-10">SISTEMA RESTAURADO v42.3</p>
+        <p class="text-xs text-gray-400 font-mono mb-10">SISTEMA RESTAURADO v44.0</p>
         <button id="btn-enter-system" class="app-btn justify-center font-bold tracking-widest" onclick="window.startSystem()">INICIAR SISTEMA</button>
     </div>
 
@@ -252,7 +249,6 @@
         <div id="scan-overlay-dark"></div>
         <div id="scan-frame">
             <video id="scan-video" playsinline muted></video>
-            <!-- EFECTO ESCANER -->
             <div class="scan-overlay" style="display: block;"></div> 
         </div>
         <div id="scan-text-status" class="absolute top-24 text-center w-full text-cyan-400 font-bold text-sm" style="z-index:20;">ESCANEAR QR DETECTOR</div>
@@ -273,7 +269,6 @@
             <textarea id="place-context" class="area-input" placeholder="ESCRIBE CONTEXTO: Cementerio, Casa Antigua, Bosque, Hospital... (Opcional)" oninput="checkContextInput()"></textarea>
             <div class="relative w-full h-48 bg-black rounded-lg overflow-hidden mb-4 border border-gray-800" style="position: relative;">
                 <video id="preview-video" autoplay playsinline muted style="width:100%; height:100%; object-fit:cover;"></video>
-                <!-- CAPA DE ESCANEO -->
                 <div id="preview-scan-overlay" class="scan-overlay" style="display:none;"></div>
             </div>
             <button id="btn-scan-now" class="bg-red-900 hover:bg-red-800 text-white p-4 rounded w-full flex items-center justify-center gap-2 font-bold text-lg transition-all" onclick="captureSeed()">
@@ -309,17 +304,14 @@
             <div class="flex items-center">
                 <div id="live-dot" class="dot online"></div>
                 <span id="live-text" class="text-xs text-green-400 font-bold">LIVE</span>
-                <!-- VISUALIZADOR DE AUDIO (BARRAS) -->
                 <canvas id="mic-visualizer"></canvas>
             </div>
             <button onclick="logout()" class="text-xs text-gray-400 border border-gray-600 px-3 py-1 rounded">SALIR</button>
         </div>
 
-        <!-- BOTONES SUPERIORES / INFERIORES (DISCRETOS) -->
         <div id="btn-wordbank" class="discrete-btn" onclick="showWordBank()"><i class="fas fa-book"></i></div>
         <div id="btn-location-change" class="discrete-btn" onclick="manualLocationChange()"><i class="fas fa-map-marker-alt"></i></div>
 
-        <!-- UI MIC OVERLAY -->
         <div id="ui-mic-overlay">
             <div id="mic-logo-center">
                 <div class="signal-wave"></div>
@@ -330,7 +322,6 @@
             <p class="mt-12 text-cyan-300 text-sm font-mono tracking-widest font-bold animate-pulse">TRANSMITIENDO SEÑAL</p>
         </div>
         
-        <!-- UI SPIRIT -->
         <div id="ui-spirit">
             <div id="spirit-text"></div>
             <div class="invoke-container">
@@ -338,7 +329,6 @@
                     <i id="invoke-icon" class="fas fa-fingerprint"></i>
                 </button>
                 <div id="invoke-status" class="text-[10px] text-gray-400 mt-2 tracking-widest font-bold">CALIBRANDO...</div>
-                <!-- TEXTO PEQUEÑO DE LO QUE SE ENTENDIÓ -->
                 <div id="user-transcript"></div>
             </div>
         </div>
@@ -352,13 +342,16 @@
 
 <script>
     // --- GLOBALS ---
-    let GEMINI_API_KEY = "AIzaSyCOIVd2C7fgLi5JPgAXoNDrF50K0E4NhSY"; // LLAVE FIJA
+    let GEMINI_API_KEY = "AIzaSyCOIVd2C7fgLi5JPgAXoNDrF50K0E4NhSY"; 
     let stream, peer, conn, hostId;
     let audioCtx, destNode, micSource, bgSourceNode;
     let micGainNode, bgToLocalGain, bgToPeerGain;
     let analyser, dataArray; 
-    
+    let currentCall; // GLOBAL CALL REFERENCE
+
     let recognition, isProcessing = false, passiveInterval;
+    let isRecActive = false; 
+
     let spiritScript = ["VACÍO", "FRÍO", "AQUÍ", "DOLOR", "VEO", "ATRAS", "MUERTE", "AYUDA", "NO", "SI", "SOLO", "SOMBRA", "LUZ", "NIÑO", "VIEJO"];
     let isCalibrated = false, isFallbackMode = false;
     let isSpiritVoxActive = true; 
@@ -388,11 +381,7 @@
 
     // --- UTILS ---
     function show(id) { document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
-    
-    async function requestWakeLock() {
-        try { if ('wakeLock' in navigator) { await navigator.wakeLock.request('screen'); } } catch (err) { console.log('Wake Lock Error:', err); }
-    }
-
+    async function requestWakeLock() { try { if ('wakeLock' in navigator) { await navigator.wakeLock.request('screen'); } } catch (err) { console.log('Wake Lock Error:', err); } }
     function updateStatusUI(online) { const dot = document.getElementById('live-dot'); const txt = document.getElementById('live-text'); const menuStat = document.getElementById('conn-status'); if(online) { if(dot) dot.className = "dot online"; if(txt) { txt.innerText = "EN VIVO"; txt.style.color="#00ff41"; } if(menuStat) { menuStat.innerText = "CONECTADO"; menuStat.style.color="#00ff41"; menuStat.style.borderColor = "#00ff41"; } } else { if(dot) dot.className = "dot offline"; if(txt) { txt.innerText = "OFFLINE"; txt.style.color="#ff0055"; } if(menuStat) { menuStat.innerText = "MODO OFFLINE"; menuStat.style.color="#ffae00"; menuStat.style.borderColor = "#ffae00"; } } }
     function checkContextInput() { document.getElementById('btn-scan-now').style.display = 'flex'; }
     function updateWordBankIcon(state) { const btn = document.getElementById('btn-wordbank'); const invoke = document.getElementById('invoke-btn'); const lbl = document.getElementById('invoke-status'); if(state === 'loading') { if(btn) btn.className = 'loading'; if(invoke) invoke.className = 'invoke-btn locked'; if(lbl) { lbl.innerText = "CALIBRANDO ENTORNO..."; lbl.style.color = "#ffae00"; } } else if (state === 'ready') { if(btn) btn.className = 'ready'; setTimeout(() => { if(btn) btn.className = ''; }, 1000); if(invoke) { invoke.disabled = false; invoke.className = 'invoke-btn ready'; } if(lbl) { lbl.innerText = "MANTENER PARA PREGUNTAR"; lbl.style.color = "#fff"; } isWordBankReady = true; } }
@@ -401,35 +390,18 @@
     // --- SYSTEM START ---
     window.startSystem = async function() {
         const btn = document.getElementById('btn-enter-system'); btn.innerText = "SOLICITANDO ACCESO..."; btn.disabled = true;
-        
-        // UNLOCK AUDIO ENGINE
         const bgAudio = document.getElementById('bg-noise');
-        if (bgAudio) {
-             try {
-                 bgAudio.muted = true;
-                 await bgAudio.play();
-                 bgAudio.pause();
-                 bgAudio.currentTime = 0;
-                 bgAudio.muted = false; 
-             } catch(e) { console.warn("Audio unlock warning:", e); }
-        }
-
+        if (bgAudio) { try { bgAudio.muted = true; await bgAudio.play(); bgAudio.pause(); bgAudio.currentTime = 0; bgAudio.muted = false; } catch(e) { console.warn("Audio unlock warning:", e); } }
         if('speechSynthesis' in window) { const u = new SpeechSynthesisUtterance(""); window.speechSynthesis.speak(u); window.speechSynthesis.getVoices(); }
-        
         try {
             try { 
                 stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: { facingMode: "environment", width: 320, height: 240 } }); 
             } 
             catch(e1) { stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: { facingMode: "environment" } }); }
-            
             const videos = ['scan-video', 'cam-video-bg', 'seed-video', 'preview-video', 'keep-alive-video'];
             videos.forEach(id => { const el = document.getElementById(id); if(el) { el.srcObject = stream; el.play().catch(e=>{}); } });
-            
             try { initAudioContext(); } catch(e) { console.log("Audio warning", e); }
-            
-            // VALIDAR LLAVE FIJA AL INICIO
-            validateApiKey(GEMINI_API_KEY);
-            
+            if(GEMINI_API_KEY) validateApiKey(GEMINI_API_KEY); else updateApiStatus(null);
             show('s-scan'); scanQR();
         } catch(e) { alert("ERROR: SE REQUIERE CÁMARA Y MICRÓFONO.\n" + e.message); if(btn) { btn.innerText = "REINTENTAR"; btn.disabled = false; } }
     };
@@ -444,27 +416,34 @@
                 micGainNode.gain.value = GAIN_MIC_MUTE; 
                 micSource.connect(micGainNode); 
                 micGainNode.connect(destNode); 
-                
-                analyser = audioCtx.createAnalyser();
-                analyser.fftSize = 64;
-                micSource.connect(analyser); 
-                dataArray = new Uint8Array(analyser.frequencyBinCount);
-                drawVisualizer();
+                analyser = audioCtx.createAnalyser(); analyser.fftSize = 64; micSource.connect(analyser); 
+                dataArray = new Uint8Array(analyser.frequencyBinCount); drawVisualizer();
             }
             const bgEl = document.getElementById('bg-noise');
-            if(bgEl) { bgSourceNode = audioCtx.createMediaElementSource(bgEl); bgToLocalGain = audioCtx.createGain(); bgToLocalGain.gain.value = 3.0; bgSourceNode.connect(bgToLocalGain); bgToLocalGain.connect(audioCtx.destination); bgToPeerGain = audioCtx.createGain(); bgToPeerGain.gain.value = 0.05; bgSourceNode.connect(bgToPeerGain); bgToPeerGain.connect(destNode); }
-            
+            if(bgEl) { 
+                bgSourceNode = audioCtx.createMediaElementSource(bgEl); 
+                bgToLocalGain = audioCtx.createGain(); bgToLocalGain.gain.value = 3.0; 
+                bgSourceNode.connect(bgToLocalGain); bgToLocalGain.connect(audioCtx.destination); 
+                bgToPeerGain = audioCtx.createGain(); bgToPeerGain.gain.value = 0.05; 
+                bgSourceNode.connect(bgToPeerGain); bgToPeerGain.connect(destNode); 
+            }
+
+            // KEEP ALIVE OSCILLATOR (ANTI-DROP)
+            const osc = audioCtx.createOscillator();
+            const oscGain = audioCtx.createGain();
+            oscGain.gain.value = 0.001; // Silent
+            osc.connect(oscGain);
+            oscGain.connect(destNode);
+            osc.start();
+
             const resumeAudio = () => { if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); };
-            document.body.addEventListener('touchstart', resumeAudio);
-            document.body.addEventListener('click', resumeAudio);
+            document.body.addEventListener('touchstart', resumeAudio); document.body.addEventListener('click', resumeAudio);
         } catch(e) {}
     }
 
     function drawVisualizer() {
-        const canvas = document.getElementById('mic-visualizer');
-        if (!canvas) return requestAnimationFrame(drawVisualizer);
-        const ctx = canvas.getContext('2d');
-        if (!analyser || !ctx) return requestAnimationFrame(drawVisualizer);
+        const canvas = document.getElementById('mic-visualizer'); if (!canvas) return requestAnimationFrame(drawVisualizer);
+        const ctx = canvas.getContext('2d'); if (!analyser || !ctx) return requestAnimationFrame(drawVisualizer);
         const bufferLength = analyser.frequencyBinCount; analyser.getByteFrequencyData(dataArray);
         ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; ctx.clearRect(0, 0, canvas.width, canvas.height);
         const barWidth = (canvas.width / bufferLength) * 2.5; let barHeight; let x = 0;
@@ -472,22 +451,17 @@
         requestAnimationFrame(drawVisualizer);
     }
 
-    // --- AUTH, QR, API ---
     function openAuthModal() { document.getElementById('modal-auth').classList.add('active'); }
     function closeAuthModal() { document.getElementById('modal-auth').classList.remove('active'); }
     function checkAuth() { if(document.getElementById('auth-pass').value === "OBR1995@") { isStandalone = true; closeAuthModal(); updateMenuUI(); show('s-menu'); } else alert("CLAVE INCORRECTA"); }
-    function updateMenuUI() { const micBtn = document.getElementById('btn-mic-pro'); const spiritBtn = document.getElementById('btn-spirit-box'); updateStatusUI(!isStandalone); if(isStandalone) micBtn.classList.add('locked'); else micBtn.classList.remove('locked'); updateApiStatus(true); } // Siempre true porque es fija
+    function updateMenuUI() { const micBtn = document.getElementById('btn-mic-pro'); const spiritBtn = document.getElementById('btn-spirit-box'); updateStatusUI(!isStandalone); if(isStandalone) micBtn.classList.add('locked'); else micBtn.classList.remove('locked'); updateApiStatus(true); } 
     
     function scanQR() { 
-        const v = document.getElementById('scan-video'); 
-        const cvs = document.createElement('canvas'); 
-        const ctx = cvs.getContext('2d'); 
-        const status = document.getElementById('scan-text-status');
+        const v = document.getElementById('scan-video'); const cvs = document.createElement('canvas'); const ctx = cvs.getContext('2d'); const status = document.getElementById('scan-text-status');
         function loop() { 
             if(isConnecting) return; 
             if(document.getElementById('s-scan').classList.contains('active') && v.readyState===4) { 
-                cvs.width=v.videoWidth; cvs.height=v.videoHeight; ctx.drawImage(v,0,0); 
-                const c = jsQR(ctx.getImageData(0,0,cvs.width,cvs.height).data, cvs.width, cvs.height); 
+                cvs.width=v.videoWidth; cvs.height=v.videoHeight; ctx.drawImage(v,0,0); const c = jsQR(ctx.getImageData(0,0,cvs.width,cvs.height).data, cvs.width, cvs.height); 
                 if(c) {
                     isConnecting = true;
                     status.innerText = "VINCULANDO CON DETECTOR...";
@@ -507,9 +481,14 @@
         peer = new Peer(); 
         
         peer.on('open', () => { 
+            console.log("Peer Open");
             updateMenuUI(); 
             show('s-menu'); 
-            if(destNode) { const call = peer.call(hostId, destNode.stream); }
+            // GLOBAL REFERENCE FOR CALL
+            if(destNode) {
+                currentCall = peer.call(hostId, destNode.stream);
+                console.log("Call Started");
+            }
         }); 
         
         peer.on('error', e => { 
@@ -523,91 +502,46 @@
     
     function openApiSettings() { document.getElementById('modal-api').classList.add('active'); }
     async function saveApiKey() { alert("LA API ESTÁ FIJA, NO NECESITAS GUARDAR NADA."); }
-    
-    async function validateApiKey(key) {
-        // VALIDACION INTERNA AUTOMATICA
-        updateApiStatus(true); 
-    }
-    
+    async function validateApiKey(key) { updateApiStatus(true); }
     function updateApiStatus(isValid) { const btn = document.getElementById('btn-spirit-box'); const status = document.getElementById('api-status-text'); if(!btn) return; if(isValid === true) { btn.classList.remove('locked'); status.innerText = "ACTIVO - LISTO"; status.style.color = "#00ff41"; } else { btn.classList.add('locked'); status.innerText = "REQUIERE API KEY"; status.style.color = "#ff3333"; } }
 
-    // --- MODES ---
     function enterMicPro() {
         if(isStandalone) return; currentMode = 'mic_pro'; requestWakeLock(); 
         clearInterval(passiveInterval); if(recognition) try{recognition.stop();}catch(e){} isProcessing = false;
-        
         const vid = document.getElementById('cam-video-bg'); if(vid) { vid.style.width = '1px'; vid.style.height = '1px'; vid.style.opacity = '0'; } 
-        
-        document.getElementById('bg-static').style.opacity = '1'; document.getElementById('hud-layer').style.display = 'none'; 
-        document.getElementById('bg-noise').pause(); 
+        document.getElementById('bg-static').style.opacity = '1'; document.getElementById('hud-layer').style.display = 'none'; document.getElementById('bg-noise').pause(); 
         if(micGainNode) micGainNode.gain.value = 1.5; 
         document.getElementById('ui-mic-overlay').classList.add('active'); document.getElementById('ui-spirit').classList.add('hidden'); 
-        document.getElementById('btn-wordbank').style.display = 'none'; 
-        document.getElementById('btn-location-change').style.display = 'none'; 
-        document.getElementById('btn-toggle-mode').style.display = 'none'; 
-        document.getElementById('mic-visualizer').style.display = 'block';
+        document.getElementById('btn-wordbank').style.display = 'none'; document.getElementById('btn-location-change').style.display = 'none'; document.getElementById('btn-toggle-mode').style.display = 'none'; document.getElementById('mic-visualizer').style.display = 'block';
         stopHudAnimation(); show('s-live');
     }
 
-    function enterSpiritBox() {
-        // YA NO REVISAMOS KEY VACIA PORQUE ES FIJA
-        currentMode = 'spirit'; document.getElementById('modal-photo').classList.add('active'); requestWakeLock(); 
-        const pv = document.getElementById('preview-video'); 
-        if(pv && stream) { pv.srcObject = stream; pv.play(); }
-    }
+    function enterSpiritBox() { currentMode = 'spirit'; document.getElementById('modal-photo').classList.add('active'); requestWakeLock(); const pv = document.getElementById('preview-video'); if(pv && stream) { pv.srcObject = stream; pv.play(); } }
     function closePhotoModal() { document.getElementById('modal-photo').classList.remove('active'); }
 
-    // --- IA & CALIBRACION ---
     async function captureSeed() {
-        const status = document.getElementById('seed-status'); const context = document.getElementById('place-context').value; 
-        const vid = document.getElementById('preview-video');
-        
+        const status = document.getElementById('seed-status'); const context = document.getElementById('place-context').value; const vid = document.getElementById('preview-video');
         if(!vid || vid.readyState !== 4) { status.innerText = "CÁMARA INICIANDO..."; return; }
-        
-        vid.pause();
-        document.getElementById('preview-scan-overlay').style.display = 'block';
-        status.innerText = "SINTONIZANDO ENTIDAD..."; updateWordBankIcon('loading'); 
-        
+        vid.pause(); document.getElementById('preview-scan-overlay').style.display = 'block'; status.innerText = "SINTONIZANDO ENTIDAD..."; updateWordBankIcon('loading'); 
         const isMale = Math.random() > 0.5;
-        if(isMale) {
-            currentEntityName = MALE_NAMES[Math.floor(Math.random() * MALE_NAMES.length)];
-            currentPitch = 0.6 + Math.random() * 0.3; 
-        } else {
-            currentEntityName = FEMALE_NAMES[Math.floor(Math.random() * FEMALE_NAMES.length)];
-            currentPitch = 1.1 + Math.random() * 0.3; 
-        }
+        if(isMale) { currentEntityName = MALE_NAMES[Math.floor(Math.random() * MALE_NAMES.length)]; currentPitch = 0.6 + Math.random() * 0.3; } 
+        else { currentEntityName = FEMALE_NAMES[Math.floor(Math.random() * FEMALE_NAMES.length)]; currentPitch = 1.1 + Math.random() * 0.3; }
         currentRate = 0.7 + Math.random() * 0.3;
-
-        const cvs = document.createElement('canvas'); cvs.width = 640; cvs.height = 480; cvs.getContext('2d').drawImage(vid, 0, 0, 640, 480);
-        const b64 = cvs.toDataURL('image/jpeg', 0.6).split(',')[1]; window.currentImageB64 = b64; 
-
+        
+        // NO CAPTURE IMAGE FOR LOGIC, JUST FOR CONTEXT/DECORATION IF NEEDED
         try {
-            // PROMPT ACTUALIZADO: PALABRAS MUNDANAS E INCOHERENTES
-            const prompt = `Analiza la imagen y descripción: '${context}'. Genera 50 palabras SUELTAS y VAGAS. Mezcla verbos en infinitivo, sustantivos comunes y adjetivos simples. NADA POÉTICO. NADA DE "ALMA" o "ETERNO". Cosas mundanas o confusas. Ej: PUERTA, SUELO, AYER, CORRER, MALO, TRES, ABAJO. Formato: PALABRA|PALABRA`;
-            const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({contents:[{parts:[{text: prompt}, {inline_data:{mime_type:"image/jpeg",data:b64}}]}]}) });
-            const d = await r.json();
-            const txt = d.candidates?.[0]?.content?.parts?.[0]?.text || "";
-            if(txt) { 
-                let words = txt.replace(/\n/g, '|').replace(/[0-9.]/g, '').split('|').map(s => s.trim().replace(/[^a-zA-ZÀ-ÿ ]/g, '')).filter(s => s.length > 2 && !s.includes('PALABRA')); 
-                if(words.length > 10) spiritScript = words.slice(0, 50); 
-            }
+            const prompt = `Analiza imagen y contexto: '${context}'. Genera 50 palabras BASICAS. Nivel vocabulario: Niño de primaria. Ej: MESA, AGUA, LUZ, NO, SI, AYUDA, MAMA, PUERTA, FRIO. Prohibido palabras cultas o complejas. Solo sustantivos y verbos simples. Formato: PALABRA|PALABRA`;
+            const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({contents:[{parts:[{text: prompt}]}]}) });
+            const d = await r.json(); const txt = d.candidates?.[0]?.content?.parts?.[0]?.text || "";
+            if(txt) { let words = txt.replace(/\n/g, '|').replace(/[0-9.]/g, '').split('|').map(s => s.trim().replace(/[^a-zA-ZÀ-ÿ ]/g, '')).filter(s => s.length > 2 && !s.includes('PALABRA')); if(words.length > 10) spiritScript = words.slice(0, 50); }
         } catch(e) { console.log("Backup usado", e); }
-        
         status.innerText = "ENTIDAD: " + currentEntityName; updateWordBankIcon('ready');
-        
-        setTimeout(() => { 
-            document.getElementById('modal-photo').classList.remove('active'); 
-            document.getElementById('preview-scan-overlay').style.display = 'none';
-            vid.play();
-            startSpiritBoxActive(); 
-        }, 1500);
+        setTimeout(() => { document.getElementById('modal-photo').classList.remove('active'); document.getElementById('preview-scan-overlay').style.display = 'none'; vid.play(); startSpiritBoxActive(); }, 1500);
     }
     
     function startSpiritBoxActive() {
-        document.getElementById('bg-static').style.opacity = '0'; 
-        const vid = document.getElementById('cam-video-bg'); if(vid) { vid.style.width = '1px'; vid.style.height = '1px'; vid.style.opacity = '0'; }
-        document.getElementById('hud-layer').style.display = 'block'; startHudAnimation();
-        document.getElementById('bg-noise').play().catch(e=>{}); 
+        document.getElementById('bg-static').style.opacity = '0'; const vid = document.getElementById('cam-video-bg'); if(vid) { vid.style.width = '1px'; vid.style.height = '1px'; vid.style.opacity = '0'; }
+        document.getElementById('hud-layer').style.display = 'block'; startHudAnimation(); document.getElementById('bg-noise').play().catch(e=>{}); 
         if(micGainNode) micGainNode.gain.value = GAIN_MIC_MUTE; 
         const uio = document.getElementById('ui-mic-overlay'); if(uio) uio.classList.remove('active'); const uis = document.getElementById('ui-spirit'); if(uis) uis.classList.remove('hidden');
         document.getElementById('btn-wordbank').style.display = 'flex'; document.getElementById('btn-location-change').style.display = 'flex'; document.getElementById('btn-toggle-mode').style.display = 'flex'; document.getElementById('mic-visualizer').style.display = 'block';
@@ -616,22 +550,16 @@
 
     function showWordBank() { populateDictionary(); document.getElementById('modal-dictionary').classList.add('active'); }
 
-    // --- MANUAL LOCATION ---
     function manualLocationChange() {
         if(isProcessing || isTuning) return; isTuning = true;
         const btn = document.getElementById('btn-location-change'); const invoke = document.getElementById('invoke-btn'); const status = document.getElementById('invoke-status');
         btn.classList.add('tuning'); invoke.classList.add('locked'); invoke.disabled = true;
         if(micGainNode) micGainNode.gain.value = 0; if(bgToLocalGain) bgToLocalGain.gain.value = 5.0; 
         status.innerText = "SINTONIZANDO..."; status.style.color = "#ff0055"; 
-        
-        const cvs = document.createElement('canvas'); cvs.width=320; cvs.height=240; const vid = document.getElementById('cam-video-bg');
-        if(vid && vid.readyState >= 2) { cvs.getContext('2d').drawImage(vid,0,0,320,240); window.currentImageB64 = cvs.toDataURL('image/jpeg', 0.5).split(',')[1]; }
-        
         setTimeout(() => { status.innerText = "CARGANDO FRECUENCIA..."; status.style.color = "#ffae00"; const isMale = Math.random() > 0.5; if(isMale) { currentEntityName = MALE_NAMES[Math.floor(Math.random() * MALE_NAMES.length)]; currentPitch = 0.6 + Math.random() * 0.3; } else { currentEntityName = FEMALE_NAMES[Math.floor(Math.random() * FEMALE_NAMES.length)]; currentPitch = 1.1 + Math.random() * 0.3; } currentRate = 0.7 + Math.random() * 0.3; }, 1500);
         setTimeout(() => { status.innerText = "ENTIDAD: " + currentEntityName; status.style.color = "#00ff41"; btn.classList.remove('tuning'); invoke.classList.remove('locked'); invoke.disabled = false; if(bgToLocalGain) bgToLocalGain.gain.value = 3.0; isTuning = false; setTimeout(() => { status.innerText = "MANTENER PARA PREGUNTAR"; status.style.color = "#fff"; }, 2000); }, 3000);
     }
 
-    // --- HUD ---
     function startHudAnimation() {
         const layer = document.getElementById('hud-layer'); clearInterval(hudInterval);
         hudInterval = setInterval(() => { if(document.hidden || !document.getElementById('s-live').classList.contains('active')) return; const box = document.createElement('div'); box.className = 'hud-box'; const w = Math.floor(Math.random() * 20 + 10) + '%'; const h = Math.floor(Math.random() * 20 + 10) + '%'; const top = Math.floor(Math.random() * 80) + '%'; const left = Math.floor(Math.random() * 80) + '%'; box.style.width = w; box.style.height = h; box.style.top = top; box.style.left = left; layer.appendChild(box); setTimeout(() => box.remove(), 400); }, 800); 
@@ -650,36 +578,35 @@
         }
     };
     
-    // --- RECONOCIMIENTO ---
+    // --- RECONOCIMIENTO SAFE ---
     function pressFinger() {
         if(isProcessing || isMicMode || !isWordBankReady || isTuning) return; 
-        isProcessing = true; 
-        isHoldingButton = true; 
+        isProcessing = true; isHoldingButton = true; 
+        
         window.speechSynthesis.cancel();
-        if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-
-        document.getElementById('invoke-btn').classList.add('active'); document.getElementById('invoke-status').innerText = "ESCUCHANDO..."; 
         clearInterval(passiveInterval); 
+        document.getElementById('spirit-text').innerText = "";
+        document.getElementById('spirit-text').style.opacity = 0;
+
+        if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+        document.getElementById('invoke-btn').classList.add('active'); document.getElementById('invoke-status').innerText = "ESCUCHANDO..."; 
         
-        const vid = document.getElementById('cam-video-bg'); 
-        const cvs = document.createElement('canvas'); cvs.width=320; cvs.height=240; 
-        if(vid && vid.readyState >= 2) { cvs.getContext('2d').drawImage(vid,0,0,320,240); window.currentImageB64 = cvs.toDataURL('image/jpeg', 0.5).split(',')[1]; }
-        
+        const vid = document.getElementById('cam-video-bg'); const cvs = document.createElement('canvas'); cvs.width=320; cvs.height=240; if(vid && vid.readyState >= 2) { cvs.getContext('2d').drawImage(vid,0,0,320,240); window.currentImageB64 = cvs.toDataURL('image/jpeg', 0.5).split(',')[1]; }
         if(micGainNode) micGainNode.gain.value = GAIN_MIC_TALK; 
         startRecognitionSafely();
     }
 
     function releaseFinger() {
-        isHoldingButton = false; 
-        if(isMicMode) return; 
+        isHoldingButton = false; if(isMicMode) return; 
         document.getElementById('invoke-btn').classList.remove('active'); document.getElementById('invoke-status').innerText = "MANTENER PARA PREGUNTAR";
-        if(recognition) recognition.stop(); 
-        if(micGainNode) micGainNode.gain.value = GAIN_MIC_MUTE; 
+        if(recognition) recognition.stop(); if(micGainNode) micGainNode.gain.value = GAIN_MIC_MUTE; 
         setTimeout(() => { if(isProcessing) { triggerFallback(); } }, 4000); 
     }
 
     function startRecognitionSafely() {
-        if(recognition) { try { recognition.start(); } catch(e) { console.error("Rec start error:", e); } }
+        if(recognition && !isRecActive) {
+            try { recognition.start(); } catch(e) { console.error("Rec start error:", e); }
+        }
     }
 
     function triggerFallback() {
@@ -688,36 +615,42 @@
 
     function initSpeech() {
         if('webkitSpeechRecognition' in window) {
-            recognition = new webkitSpeechRecognition(); 
-            recognition.lang = 'es-ES'; 
-            recognition.continuous = false; 
-            recognition.interimResults = false;
+            recognition = new webkitSpeechRecognition(); recognition.lang = 'es-ES'; recognition.continuous = false; recognition.interimResults = false;
+            
+            // SEMAFORO DE ESTADO
+            recognition.onstart = () => { isRecActive = true; };
+            recognition.onend = () => { isRecActive = false; if (isHoldingButton) startRecognitionSafely(); };
             
             recognition.onresult = async e => {
+                if (!e || !e.results || !e.results[0] || !e.results[0][0]) {
+                    console.warn("Speech result invalid"); return; 
+                }
+
                 let rawText = e.results[0][0].transcript.trim();
                 let cleanText = rawText.charAt(0).toUpperCase() + rawText.slice(1);
                 
                 const questionStarters = ["QUE", "COMO", "CUANDO", "DONDE", "QUIEN", "POR", "CUANTOS", "ERES", "ESTAS", "HAY", "PUEDES", "SABES"];
                 const firstWord = cleanText.split(' ')[0].toUpperCase().replace(/[^A-Z]/g, '');
-                if (questionStarters.includes(firstWord)) {
-                    if (!cleanText.endsWith('?')) cleanText += '?';
-                    if (!cleanText.startsWith('¿')) cleanText = '¿' + cleanText;
-                }
+                if (questionStarters.includes(firstWord)) { if (!cleanText.endsWith('?')) cleanText += '?'; if (!cleanText.startsWith('¿')) cleanText = '¿' + cleanText; }
 
                 document.getElementById('user-transcript').innerText = `> ${cleanText}`;
                 
                 try {
-                    // PROMPT ACTUALIZADO: INCOHERENTE Y VAGO
-                    const prompt = `INSTRUCCION SYSTEMA: ERES EL ESPIRITU "${currentEntityName}". ESTAS CONFUNDIDO Y MUERTO. RESPONDE A "${cleanText}".
-                    REGLAS:
-                    1. NO USES "SOY", "ME LLAMO", "ESTOY", "HOLA".
-                    2. NOMBRE -> SOLO "${currentEntityName}".
-                    3. DONDE -> "AQUI", "OSCURO", "FRIO".
-                    4. QUE PASO -> "GOLPE", "SANGRE", "CAER".
-                    5. OTRAS -> PALABRAS SUELTAS, VAGAS O INCOHERENTES. MAX 2 PALABRAS. NADA POETICO.
-                    RESPONDE AHORA.`;
+                    const prompt = `ACTUA COMO UN ESPIRITU LLAMADO ${currentEntityName}.
+                    PREGUNTA DEL INVESTIGADOR: "${cleanText}"
+                    TU RESPUESTA DEBE SER:
+                    - CORTA (1 o 2 palabras).
+                    - DIRECTA (Responde exactamente lo que se pregunta).
+                    - SIN RELLENO (No digas "soy", "estoy", "mi nombre es").
+                    - COHERENTE (Si preguntan color, di un color. Si preguntan nombre, di tu nombre).
+                    EJEMPLOS:
+                    P: "¿Como te llamas?" R: "${currentEntityName}"
+                    P: "¿Estas aqui?" R: "SI"
+                    P: "¿Que quieres?" R: "PAZ"
+                    P: "¿Te duele?" R: "MUCHO"
+                    RESPONDE AHORA:`;
                     
-                    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({contents:[{parts:[{text:prompt},{inline_data:{mime_type:"image/jpeg",data:window.currentImageB64 || ""}}]}]}) });
+                    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({contents:[{parts:[{text:prompt}]}]}) });
                     const d = await r.json(); 
                     let ans = d.candidates[0].content.parts[0].text.toUpperCase();
                     
@@ -728,24 +661,21 @@
                     if(ans.length < 2) { triggerFallback(); }
                     else {
                         const words = ans.split(' ').filter(w => w.length > 0); if(words.length > 3) ans = words.slice(0, 3).join(' '); 
+                        document.getElementById('user-transcript').innerText = "";
                         showSpiritText(ans); speakWithEcho(ans); setTimeout(startPassiveLoop, 15000);
-                        setTimeout(() => { document.getElementById('user-transcript').innerText = ""; }, 3000);
                     }
                 } catch(x) { console.error(x); triggerFallback(); } isProcessing = false; 
             };
             
             recognition.onerror = (e) => { 
                 console.log("Rec Error:", e.error);
+                isRecActive = false;
                 if (isHoldingButton && (e.error === 'no-speech' || e.error === 'network')) {
-                    recognition.stop();
+                    recognition.abort(); // Force stop
                     setTimeout(() => startRecognitionSafely(), 100);
                 } else if (!isHoldingButton) {
                     isProcessing = false; startPassiveLoop(); 
                 }
-            };
-            
-            recognition.onend = () => { 
-                if (isHoldingButton) { startRecognitionSafely(); }
             };
         }
     }
@@ -762,7 +692,6 @@
             window.speechSynthesis.cancel();
             if(bgToLocalGain) bgToLocalGain.gain.value = 0.5; 
             if(micGainNode && !isMicMode) { micGainNode.gain.value = GAIN_MIC_LISTEN_AI; }
-            
             const safeText = text.toLowerCase();
             const u1 = new SpeechSynthesisUtterance(safeText); u1.lang = 'es-ES'; u1.pitch = currentPitch; u1.rate = currentRate; u1.volume = 1.0;
             u1.onend = function() { setTimeout(() => { if(!isProcessing && !isMicMode) { if(bgToLocalGain) bgToLocalGain.gain.value = 3.0; if(micGainNode) micGainNode.gain.value = GAIN_MIC_MUTE; } }, 500); };
