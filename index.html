@@ -2,705 +2,520 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>OBR Vox - Red Edition</title>
     <meta name="theme-color" content="#000000">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="./manifest.json">
     
-    <title>OBR LINK v44.0 FINAL</title>
-    
-    <link rel="apple-touch-icon" href="obr-logo.png">
-    <link rel="icon" type="image/png" href="obr-logo.png">
-    
-    <!-- LIBRERÍAS EXTERNAS -->
-    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&family=Creepster&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
     <style>
-        :root { --primary: #00f3ff; --secondary: #ff0055; --success: #00ff41; --warn: #ffae00; }
-        
-        * { 
-            -webkit-tap-highlight-color: transparent; 
-            outline: none; 
-            box-sizing: border-box; 
-        }
-
-        html, body {
-            background-color: #000; color: var(--primary); font-family: 'Orbitron', sans-serif;
-            height: 100dvh; width: 100vw; margin: 0; padding: 0; position: fixed; top: 0; left: 0;
-            overflow: hidden; overscroll-behavior: none;
-            -webkit-touch-callout: none; 
-            -webkit-user-select: none; 
-            user-select: none; 
-            touch-action: none;
-        }
-
-        /* EXCEPCION PARA INPUTS */
-        input, textarea {
-            -webkit-user-select: text !important;
-            user-select: text !important;
-            touch-action: auto !important;
-            -webkit-touch-callout: default !important;
-        }
-
-        #battery-saver {
-            position: fixed; inset: 0; z-index: 9999;
-            background: rgba(0, 0, 0, 0.65);
-            pointer-events: none;
-            display: none;
-        }
-
-        #bg-static { 
-            position: fixed; inset: 0; z-index: -10; 
-            background-image: url('fondo_pantalla.jpg'); background-size: cover; background-position: center; 
-            opacity: 1; transition: opacity 0.5s ease;
-        }
-        
-        #cam-video-bg {
-            position: fixed; top: 0; left: 0; width: 1px; height: 1px; object-fit: cover; z-index: -15;
-            opacity: 0; transition: opacity 0.5s;
-            filter: contrast(1.2) brightness(1.1) grayscale(0.8) sepia(0.2); 
-        }
-
-        #hud-layer {
-            position: fixed; inset: 0; z-index: 5; pointer-events: none; overflow: hidden; display: none;
-        }
-        .hud-box {
-            position: absolute; border: 2px solid var(--secondary);
-            box-shadow: 0 0 15px var(--secondary), inset 0 0 10px rgba(255, 0, 85, 0.5);
-            animation: aggressiveBlink 0.1s infinite;
-            opacity: 0.8;
-        }
-        @keyframes aggressiveBlink {
-            0% { opacity: 0.8; transform: scale(1); }
-            50% { opacity: 0.2; transform: scale(1.02); }
-            100% { opacity: 0.8; transform: scale(1); }
-        }
-
-        .screen { position: fixed; inset: 0; z-index: 10; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 20px; opacity: 0; transition: opacity 0.3s; width: 100%; height: 100%; }
-        .screen.active { display: flex; opacity: 1; z-index: 20; }
-
-        .app-btn { background: rgba(0,0,0,0.8); border: 1px solid var(--primary); color: white; padding: 20px; border-radius: 15px; width: 80%; max-width: 300px; display: flex; align-items: center; gap: 15px; margin-bottom: 15px; transition: 0.2s; }
-        .app-btn:active { transform: scale(0.96); background: var(--primary); color: black; }
-        .app-btn.red { border-color: var(--secondary); }
-        .app-btn.red:active { background: var(--secondary); color: white; }
-        .app-btn.locked { opacity: 0.4; filter: grayscale(1); pointer-events: none; border-color: #555; }
-
-        #s-scan { background: transparent; }
-        #scan-overlay-dark { position: absolute; inset: 0; background: rgba(0,0,0,0.3); z-index: 0; }
-        
-        #scan-frame {
-            position: relative; width: 280px; height: 280px;
-            border: 3px solid var(--primary); border-radius: 25px;
-            box-shadow: 0 0 30px var(--primary), inset 0 0 30px rgba(0,243,255,0.4);
-            background: rgba(0,0,0,0.5); overflow: hidden; z-index: 10;
-        }
-        #scan-video { width: 100%; height: 100%; object-fit: cover; opacity: 1; }
-        
-        .scan-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(to bottom, transparent 40%, rgba(0, 243, 255, 0.4) 50%, transparent 60%);
-            background-size: 100% 200%;
-            animation: scanVertical 1.5s infinite linear;
-            pointer-events: none;
-            z-index: 50;
-        }
-        @keyframes scanVertical { 0% { background-position: 0% 0%; } 100% { background-position: 0% 100%; } }
-
-        .status-bar { position: absolute; top: 0; left: 0; width: 100%; padding: 15px; display: flex; justify-content: space-between; align-items: center; z-index: 50; background: linear-gradient(to bottom, black, transparent); }
-        .dot { width: 8px; height: 8px; border-radius: 50%; background: #555; display: inline-block; margin-right: 5px; }
-        .dot.online { background: var(--success); box-shadow: 0 0 10px var(--success); animation: blink 2s infinite; }
-        @keyframes blink { 50% { opacity: 0.5; } }
-
-        #btn-api-config-menu {
-            position: absolute; top: 20px; right: 20px; 
-            font-size: 1.5rem; color: #aaa; 
-            background: rgba(0,0,0,0.5); padding: 10px; border-radius: 50%; border: 1px solid #444;
-            z-index: 60; cursor: pointer;
-        }
-
-        .discrete-btn {
-            position: absolute; z-index: 60;
-            width: 45px; height: 45px; font-size: 1.2rem;
-            display: flex; align-items: center; justify-content: center;
-            border-radius: 50%; background: rgba(0,0,0,0.4); 
-            border: 1px solid rgba(255,255,255,0.2);
-            color: rgba(255,255,255,0.8);
-            transition: all 0.3s;
-            cursor: pointer;
-        }
-        .discrete-btn:active { background: var(--primary); color: black; opacity: 1; }
-        
-        #btn-wordbank { 
-            position: absolute !important;
-            top: 80px !important; 
-            right: 20px !important; 
-            bottom: auto !important; 
-            left: auto !important; 
-            margin: 0 !important;
-            z-index: 100 !important;
-        }
-        
-        #btn-location-change { bottom: 30px; left: 30px; }
-        
-        #btn-wordbank.loading { border-color: var(--warn); color: var(--warn); animation: pulseOrange 0.5s infinite; opacity: 1; }
-        #btn-wordbank.ready { border-color: var(--success); color: var(--success); animation: pulseGreen 0.3s 2; opacity: 1; }
-        #btn-location-change.tuning { animation: spinTune 1s infinite linear; border-color: var(--warn); color: var(--warn); opacity: 1; }
-
-        @keyframes spinTune { 100% { transform: rotate(360deg); } }
-        @keyframes pulseOrange { 50% { box-shadow: 0 0 25px var(--warn); transform: scale(1.1); } }
-        @keyframes pulseGreen { 50% { transform: scale(1.3); box-shadow: 0 0 30px var(--success); } }
-
-        .invoke-container { position: absolute; bottom: 40px; left: 0; width: 100%; display: flex; flex-direction: column; align-items: center; z-index: 50; transition: opacity 0.3s; }
-        .invoke-btn { 
-            width: 90px; height: 90px; border-radius: 50%; border: 2px solid #555; 
-            background: rgba(20,20,20,0.9); color: #555; font-size: 2.5rem; 
-            display: flex; align-items: center; justify-content: center; 
-            transition: 0.2s; backdrop-filter: blur(4px); 
-            touch-action: none; -webkit-user-select: none; user-select: none;
-        }
-        .invoke-btn.active { border-color: var(--success); color: var(--success); box-shadow: 0 0 30px var(--success) inset; transform: scale(1.1); }
-        .invoke-btn.locked { border-color: var(--secondary); color: #555; cursor: not-allowed; } 
-        
-        #spirit-text { 
-            position: absolute; bottom: 200px; width: 90%; left: 5%; 
-            text-align: center; font-family: 'Creepster'; font-size: 2.2rem; 
-            color: #ff0000; text-shadow: 3px 3px 0px black, 0 0 15px red; 
-            pointer-events: none; z-index: 2000; opacity: 0; transition: opacity 0.3s;
-        }
-
-        #user-transcript {
-            margin-top: 5px;
-            font-size: 0.6rem;
-            color: #666;
-            font-family: 'Share Tech Mono';
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            min-height: 15px;
-            text-align: center;
-            width: 80%;
-            white-space: nowrap;
+        body { 
+            background-color: #000;
+            color: #ef4444; /* Rojo base */
+            font-family: 'Courier New', Courier, monospace;
             overflow: hidden;
-            text-overflow: ellipsis;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        #camera-feed {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 0;
+            filter: grayscale(100%) contrast(1.2) brightness(0.6);
+            transform: scaleX(1);
         }
 
-        #ui-spirit { width: 100%; height: 100%; position: absolute; top:0; left:0; pointer-events: none; }
-        #ui-spirit .invoke-container, #ui-spirit .discrete-btn { pointer-events: auto; }
-
-        #btn-toggle-mode {
-            position: absolute; bottom: 30px; right: 30px; z-index: 60;
-            width: 50px; height: 50px; border-radius: 50%;
-            background: rgba(0,0,0,0.8); border: 1px solid #555; color: #888;
-            display: none; align-items: center; justify-content: center;
-            font-size: 1.2rem; cursor: pointer; transition: 0.3s;
+        .night-vision-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 0, 0, 0.4);
+            pointer-events: none;
+            z-index: 1;
+            box-shadow: inset 0 0 150px rgba(0,0,0,1);
         }
-        #btn-toggle-mode.mic-active { background: var(--primary); color: black; box-shadow: 0 0 20px var(--primary); border-color: white; }
 
-        .hidden { display: none !important; }
-        .modal-overlay { position: fixed; inset: 0; z-index: 3000; background: rgba(0,0,0,0.95); display: none; flex-direction: column; align-items: center; justify-content: center; }
-        .modal-overlay.active { display: flex; }
-        .auth-input { background: #222; border: 1px solid #444; color: white; padding: 10px; text-align: center; width: 80%; margin: 10px 0; }
-        .area-input { background: #111; border: 1px solid #333; color: var(--primary); padding: 10px; width: 100%; margin: 10px 0; font-family: 'Share Tech Mono'; font-size: 0.9rem; height: 80px; resize: none; }
-        
-        .word-list { max-height: 50vh; overflow-y: auto; width: 95%; display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; font-family: 'Share Tech Mono'; font-size: 0.7rem; }
-        .word-item { background: rgba(20,20,20,0.9); padding: 6px 2px; border: 1px solid #333; color: #fff; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ui-layer {
+            position: relative;
+            z-index: 10;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
 
-        #ui-mic-overlay { position: absolute; inset: 0; z-index: 40; pointer-events: none; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.5s; }
-        #ui-mic-overlay.active { opacity: 1; pointer-events: auto; }
-        
-        #mic-logo-center { width: 180px; height: 180px; border-radius: 50%; border: 4px solid var(--primary); display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.7); box-shadow: 0 0 50px rgba(0, 243, 255, 0.2); position: relative; }
-        
-        .signal-wave { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; height: 100%; border-radius: 50%; border: 2px solid var(--primary); animation: ripple 2s infinite linear; opacity: 0; }
-        .signal-wave:nth-child(1) { animation-delay: 0s; }
-        .signal-wave:nth-child(2) { animation-delay: 0.6s; }
-        .signal-wave:nth-child(3) { animation-delay: 1.2s; }
-        
-        #mic-visualizer { width: 50px; height: 20px; margin-left: 10px; display: none; }
+        .tactical-grid {
+            background-image: 
+                linear-gradient(rgba(239, 68, 68, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(239, 68, 68, 0.05) 1px, transparent 1px);
+            background-size: 50px 50px;
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 2;
+        }
 
-        @keyframes ripple { 0% { width: 100%; height: 100%; opacity: 0.8; border-width: 4px; } 100% { width: 250%; height: 250%; opacity: 0; border-width: 0px; } }
-        @keyframes pulseMic { 0% { box-shadow: 0 0 20px var(--primary); } 50% { box-shadow: 0 0 60px var(--primary); } 100% { box-shadow: 0 0 20px var(--primary); } }
+        /* --- EFECTO TERROR PARA EL TEXTO --- */
+        .terror-text {
+            color: #ffffff;
+            text-shadow: 4px 4px 0px #8b0000;
+            animation: terror-shake 0.3s infinite;
+            transform-origin: center;
+        }
 
+        @keyframes terror-shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); text-shadow: 4px 4px 0px #8b0000; }
+            20% { transform: translate(-3px, 0px) rotate(-1deg); text-shadow: -4px 4px 0px #ff0000; opacity: 0.9;}
+            40% { transform: translate(1px, -1px) rotate(1deg); text-shadow: 4px -4px 0px #8b0000; }
+            60% { transform: translate(-3px, 1px) rotate(0deg); text-shadow: -4px -4px 0px #ff0000; opacity: 1;}
+            80% { transform: translate(-1px, -1px) rotate(1deg); text-shadow: 2px 2px 0px #8b0000; }
+            100% { transform: translate(1px, -2px) rotate(-1deg); text-shadow: 4px 4px 0px #ff0000; }
+        }
+
+        .slam-in {
+            animation: slam 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        @keyframes slam {
+            0% { transform: scale(3); opacity: 0; }
+            50% { transform: scale(0.9); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* --- EFECTO LATIDO PARA EL LOGO --- */
+        .logo-spectral {
+            animation: spectral-pulse 3s infinite ease-in-out;
+        }
+        @keyframes spectral-pulse {
+            0% { filter: drop-shadow(0 0 5px rgba(220, 38, 38, 0.2)) grayscale(100%); opacity: 0.7; transform: scale(1); }
+            50% { filter: drop-shadow(0 0 25px rgba(255, 0, 0, 0.8)) grayscale(0%); opacity: 1; transform: scale(1.05); }
+            100% { filter: drop-shadow(0 0 5px rgba(220, 38, 38, 0.2)) grayscale(100%); opacity: 0.7; transform: scale(1); }
+        }
     </style>
 </head>
-<body oncontextmenu="return false;">
+<body>
+    <div id="root"></div>
 
-    <div id="battery-saver"></div>
-    <div id="bg-static"></div>
-    <video id="cam-video-bg" playsinline autoplay muted loop></video>
-    <div id="hud-layer"></div>
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
 
-    <video id="seed-video" playsinline autoplay muted class="hidden"></video>
-    <video id="keep-alive-video" playsinline autoplay muted loop style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;"></video>
+        // --- CONFIGURACIÓN ---
+        const AUDIO_BASE_PATH = './audio/';
+        const BACKGROUND_AUDIO = './FONDO_1.mp3';
+        const LOGO_PATH = './obr-logo.png';
 
-    <!-- 1. LOGIN -->
-    <div id="s-login" class="screen active">
-        <img src="obr-logo.png" class="w-32 mb-6 animate-pulse" onerror="this.style.display='none'">
-        <h1 class="text-3xl font-bold tracking-widest text-white mb-2">OBR LINK</h1>
-        <p class="text-xs text-gray-400 font-mono mb-10">SISTEMA RESTAURADO v44.0</p>
-        <button id="btn-enter-system" class="app-btn justify-center font-bold tracking-widest" onclick="window.startSystem()">INICIAR SISTEMA</button>
-    </div>
+        // --- ICONOS ---
+        const IconGhost = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M9 10h.01"/><path d="M15 10h.01"/><path d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"/></svg>;
+        const IconActivity = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>;
+        const IconPower = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>;
 
-    <!-- 2. SCANNER -->
-    <div id="s-scan" class="screen">
-        <div id="scan-overlay-dark"></div>
-        <div id="scan-frame">
-            <video id="scan-video" playsinline muted></video>
-            <div class="scan-overlay" style="display: block;"></div> 
-        </div>
-        <div id="scan-text-status" class="absolute top-24 text-center w-full text-cyan-400 font-bold text-sm" style="z-index:20;">ESCANEAR QR DETECTOR</div>
-        <div id="btn-offline-access" onclick="openAuthModal()" style="position: absolute; top: 20px; right: 20px; z-index: 60; color: rgba(255,255,255,0.3); font-size: 1.5rem;"><i class="fas fa-cog"></i></div>
-        <button onclick="location.reload()" class="absolute bottom-20 text-red-500 text-xs font-bold border-b border-red-500 pb-1" style="z-index:20;">CANCELAR OPERACIÓN</button>
-    </div>
+        // --- BANCO DE FRASES (RESUMIDO) ---
+        const PHRASE_LIST = [
+            "atras", "frio", "ayuda", "muerte", "luz", "oscuridad", "obregon", "tumba",
+            "vete", "aqui", "escucho", "miedo", "niño", "agua", "fuego", "piedra",
+            "corre", "espera", "nombre", "tiempo", "dolor", "soledad", "madre", "padre",
+            "espiritu", "señal", "ruido", "silencio", "cierra", "abre", "mira", "baja",
+            "sube", "cerca", "lejos", "tierra", "cielo", "infierno", "demonio", "angel",
+            "rojo", "negro", "sangre", "llanto", "risas", "grito", "buscar", "encontrar",
+            "hola", "adios", "estas", "nosotros", "ellos", "cuidado", "peligro", "sueño",
+            "somos_cuatro", "estamos_aca", "detras_de_ti", "tuve_un_accidente", 
+            "quiero_visitar_mi_familia", "no_me_puedo_ir", "ayudame_a_salir",
+            "estoy_perdido", "quien_eres", "busco_la_luz", "hace_frio_aqui",
+            "no_te_queremos", "dejanos_en_paz", "estoy_enterrado", "bajo_el_suelo",
+            "mira_detras", "no_respiro", "donde_estoy", "somos_muchos",
+            "ven_con_nosotros", "te_estoy_viendo", "escucha_mi_voz", "no_es_tu_lugar",
+            "estoy_quemandome", "fue_un_error", "sueltame", "ya_es_tarde",
+            "rezar_no_sirve", "estamos_esperando", "la_puerta_esta_abierta",
+            "aqui_estoy", "no_te_vayas", "escuchame", "estoy_aqui", "no_mires", 
+            "no_puedo", "ven", "mirame", "no_corras", "estoy_solo", "no_salgas", 
+            "tengo_frio", "nos_escuchan", "no_es_seguro", "quedate", "estoy_atrapado",
+            "sigueme", "no_grites", "estoy_muerto", "no_respires", "estoy_contigo",
+            "ya_viene", "estoy_cansado", "escucha_bien", "no_huyas", "me_duele",
+            "aqui_no", "esta_oscuro", "no_hay_salida", "no_me_toques", "me_llamaron",
+            "esta_cerca", "no_te_acerques", "no_duermas", "me_ves", "no_mires_atras",
+            "estoy_debajo", "no_hables", "me_oyes", "esta_aqui", "no_cierres",
+            "estoy_arriba", "no_confies", "me_quede", "aqui_dentro", "no_lo_sabes",
+            "estoy_cayendo", "no_saldra", "me_dejaron", "esta_vivo", "no_despiertes",
+            "estoy_roto", "no_entiendes", "me_llamas", "aqui_sigo", "no_lo_mires",
+            "estoy_sangrando", "no_es_real", "me_perdi", "esta_mal", "no_escuches",
+            "estoy_solo_aqui", "no_te_muevas", "me_buscan", "aqui_abajo", "no_puedo_salir",
+            "estoy_mirando", "no_lo_abras", "me_oyen", "esta_abierto", "no_me_sigas",
+            "estoy_esperando_aqui", "no_te_escondas", "me_olvidaron", "aqui_termina",
+            "no_regreses", "estoy_despierto", "no_resistas", "me_escuchas", "esta_oscuro_aqui",
+            "no_confies_en_ellos", "estoy_cerca_de_ti", "no_te_vayas_solo", "me_duele_mucho",
+            "aqui_nadie", "no_soy_humano", "estoy_atrapado_aqui", "no_lo_intentes",
+            "me_quede_atras", "esta_frio", "no_puedo_ver", "estoy_observando",
+            "no_grites_aqui", "me_dejaron_solo"
+        ];
 
-    <!-- MODALES -->
-    <div id="modal-auth" class="modal-overlay"><div class="modal-box p-5 bg-black border border-gray-700 rounded-lg text-center"><h3 class="text-white font-bold mb-2">ACCESO MANUAL</h3><input type="password" id="auth-pass" class="auth-input" placeholder="CLAVE DE ACCESO"><div class="flex gap-2 mt-4"><button onclick="closeAuthModal()" class="flex-1 py-2 bg-gray-800 text-xs text-white rounded">VOLVER</button><button onclick="checkAuth()" class="flex-1 py-2 bg-red-600 text-xs text-white rounded font-bold">ENTRAR</button></div></div></div>
-    
-    <div id="modal-api" class="modal-overlay"><div class="modal-box p-5 bg-black border border-gray-700 rounded-lg text-center w-80"><h3 class="text-cyan-400 font-bold mb-2">API GOOGLE IA</h3><button onclick="window.open('https://aistudio.google.com/api-keys')" class="w-full py-2 bg-gray-800 border border-gray-600 text-xs text-blue-300 mb-4 rounded">OBTENER CLAVE</button><input type="text" id="input-api-key" class="auth-input" placeholder="Pegar AIzaSy..."><div class="flex gap-2 mt-4"><button onclick="document.getElementById('modal-api').classList.remove('active')" class="flex-1 py-2 bg-gray-800 text-xs rounded">CERRAR</button><button id="btn-save-api" onclick="saveApiKey()" class="flex-1 py-2 bg-blue-600 text-xs rounded">GUARDAR</button></div></div></div>
-    
-    <div id="modal-dictionary" class="modal-overlay"><div class="modal-box mt-10 p-4 bg-black border border-green-900 rounded-lg w-11/12"><h3 class="text-green-400 mb-4 text-center font-bold tracking-widest">BANCO DE PALABRAS</h3><div id="word-list-container" class="word-list"></div><button onclick="document.getElementById('modal-dictionary').classList.remove('active')" class="w-full mt-4 py-3 bg-gray-900 text-sm rounded text-white border border-gray-700">CERRAR DICCIONARIO</button></div></div>
-    
-    <div id="modal-photo" class="modal-overlay">
-        <div class="modal-box bg-black p-4 rounded-lg w-11/12 max-w-md border-2 border-red-900 shadow-lg shadow-red-900/50" style="margin-top: -50px;">
-            <h3 class="text-red-500 font-bold mb-2 font-creepy tracking-widest text-2xl text-center">CALIBRAR ENTORNO</h3>
-            <textarea id="place-context" class="area-input" placeholder="ESCRIBE CONTEXTO: Cementerio, Casa Antigua, Bosque, Hospital... (Opcional)" oninput="checkContextInput()"></textarea>
-            <div class="relative w-full h-48 bg-black rounded-lg overflow-hidden mb-4 border border-gray-800" style="position: relative;">
-                <video id="preview-video" autoplay playsinline muted style="width:100%; height:100%; object-fit:cover;"></video>
-                <div id="preview-scan-overlay" class="scan-overlay" style="display:none;"></div>
-            </div>
-            <button id="btn-scan-now" class="bg-red-900 hover:bg-red-800 text-white p-4 rounded w-full flex items-center justify-center gap-2 font-bold text-lg transition-all" onclick="captureSeed()">
-                <i class="fas fa-camera text-xl"></i> CALIBRAR
-            </button>
-            <div id="seed-status" class="text-xs text-yellow-500 mt-3 text-center font-mono h-4"></div>
-            <div class="text-center mt-4">
-                <button onclick="closePhotoModal()" class="text-xs text-gray-500 underline">CANCELAR</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 3. MENU -->
-    <div id="s-menu" class="screen">
-        <div class="text-center mb-10 w-full relative">
-            <img src="obr-logo.png" class="w-24 mx-auto mb-4" onerror="this.style.display='none'">
-            <div id="conn-status" class="text-xs text-green-400 font-bold border border-green-800 px-4 py-1 rounded-full inline-block tracking-widest">CONECTADO</div>
-            <div id="btn-api-config-menu" onclick="openApiSettings()"><i class="fas fa-cog"></i></div>
-        </div>
-        <div id="btn-mic-pro" class="app-btn" onclick="enterMicPro()">
-            <i class="fas fa-microphone-lines text-2xl text-cyan-400"></i>
-            <div><div class="font-bold text-sm">MODO MICRÓFONO</div><div id="mic-status" class="text-[10px] text-gray-400">Audio Puro / Cam OFF</div></div>
-        </div>
-        <div id="btn-spirit-box" class="app-btn red locked" onclick="enterSpiritBox()">
-            <i class="fas fa-ghost text-2xl text-red-500"></i>
-            <div><div class="font-bold text-sm">SPIRIT BOX AI</div><div id="api-status-text" class="text-[10px] text-red-400">REQUIERE API KEY</div></div>
-        </div>
-    </div>
-
-    <!-- LIVE SCREEN -->
-    <div id="s-live" class="screen">
-        <div class="status-bar">
-            <div class="flex items-center">
-                <div id="live-dot" class="dot online"></div>
-                <span id="live-text" class="text-xs text-green-400 font-bold">LIVE</span>
-                <canvas id="mic-visualizer"></canvas>
-            </div>
-            <button onclick="logout()" class="text-xs text-gray-400 border border-gray-600 px-3 py-1 rounded">SALIR</button>
-        </div>
-
-        <div id="btn-wordbank" class="discrete-btn" onclick="showWordBank()"><i class="fas fa-book"></i></div>
-        <div id="btn-location-change" class="discrete-btn" onclick="manualLocationChange()"><i class="fas fa-map-marker-alt"></i></div>
-
-        <div id="ui-mic-overlay">
-            <div id="mic-logo-center">
-                <div class="signal-wave"></div>
-                <div class="signal-wave"></div>
-                <div class="signal-wave"></div>
-                <i class="fas fa-microphone text-7xl text-cyan-400 relative z-10"></i>
-            </div>
-            <p class="mt-12 text-cyan-300 text-sm font-mono tracking-widest font-bold animate-pulse">TRANSMITIENDO SEÑAL</p>
-        </div>
-        
-        <div id="ui-spirit">
-            <div id="spirit-text"></div>
-            <div class="invoke-container">
-                <button id="invoke-btn" class="invoke-btn locked" onpointerdown="pressFinger()" onpointerup="releaseFinger()" oncontextmenu="return false;" disabled>
-                    <i id="invoke-icon" class="fas fa-fingerprint"></i>
-                </button>
-                <div id="invoke-status" class="text-[10px] text-gray-400 mt-2 tracking-widest font-bold">CALIBRANDO...</div>
-                <div id="user-transcript"></div>
-            </div>
-        </div>
-        
-        <div id="btn-toggle-mode" onclick="window.toggleSpiritVox()">
-            <i class="fas fa-ghost" id="toggle-icon"></i>
-        </div>
-        
-        <audio id="bg-noise" src="FONDO_1.mp3" loop crossorigin="anonymous"></audio>
-    </div>
-
-<script>
-    // --- GLOBALS ---
-    let GEMINI_API_KEY = "AIzaSyAoOmgkhTQfXowrlF5PGQMjgEY7XeLLo_k"; 
-    let stream, peer, conn, hostId;
-    let audioCtx, destNode, micSource, bgSourceNode;
-    let micGainNode, bgToLocalGain, bgToPeerGain;
-    let analyser, dataArray; 
-    let currentCall; // GLOBAL CALL REFERENCE
-
-    let recognition, isProcessing = false, passiveInterval;
-    let isRecActive = false; 
-
-    let spiritScript = ["VACÍO", "FRÍO", "AQUÍ", "DOLOR", "VEO", "ATRAS", "MUERTE", "AYUDA", "NO", "SI", "SOLO", "SOMBRA", "LUZ", "NIÑO", "VIEJO"];
-    let isCalibrated = false, isFallbackMode = false;
-    let isSpiritVoxActive = true; 
-    let isMicMode = false; 
-    let isWordBankReady = false; 
-    let currentMode = "";
-    
-    let currentPitch = 0.8;
-    let currentRate = 0.8;
-    let currentEntityName = "DESCONOCIDO";
-    let isTuning = false;
-    let isHoldingButton = false; 
-    let isConnecting = false; 
-    
-    const MALE_NAMES = ["JUAN", "PEDRO", "LUIS", "JOSE", "CARLOS", "MIGUEL", "DAVID", "JORGE", "MANUEL", "ANTONIO"];
-    const FEMALE_NAMES = ["ANA", "MARIA", "CARMEN", "ISABEL", "ELENA", "LUCIA", "SOFIA", "LAURA", "MARTA", "ROSA"];
-    const NAMES_DB = [...MALE_NAMES, ...FEMALE_NAMES]; 
-
-    let isStandalone = false;
-    let hudInterval; 
-    let wakeLock = null;
-    window.currentImageB64 = ""; 
-
-    const GAIN_MIC_TALK = 2.0; 
-    const GAIN_MIC_LISTEN_AI = 4.0; 
-    const GAIN_MIC_MUTE = 0; 
-
-    // --- UTILS ---
-    function show(id) { document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
-    async function requestWakeLock() { try { if ('wakeLock' in navigator) { await navigator.wakeLock.request('screen'); } } catch (err) { console.log('Wake Lock Error:', err); } }
-    function updateStatusUI(online) { const dot = document.getElementById('live-dot'); const txt = document.getElementById('live-text'); const menuStat = document.getElementById('conn-status'); if(online) { if(dot) dot.className = "dot online"; if(txt) { txt.innerText = "EN VIVO"; txt.style.color="#00ff41"; } if(menuStat) { menuStat.innerText = "CONECTADO"; menuStat.style.color="#00ff41"; menuStat.style.borderColor = "#00ff41"; } } else { if(dot) dot.className = "dot offline"; if(txt) { txt.innerText = "OFFLINE"; txt.style.color="#ff0055"; } if(menuStat) { menuStat.innerText = "MODO OFFLINE"; menuStat.style.color="#ffae00"; menuStat.style.borderColor = "#ffae00"; } } }
-    function checkContextInput() { document.getElementById('btn-scan-now').style.display = 'flex'; }
-    function updateWordBankIcon(state) { const btn = document.getElementById('btn-wordbank'); const invoke = document.getElementById('invoke-btn'); const lbl = document.getElementById('invoke-status'); if(state === 'loading') { if(btn) btn.className = 'loading'; if(invoke) invoke.className = 'invoke-btn locked'; if(lbl) { lbl.innerText = "CALIBRANDO ENTORNO..."; lbl.style.color = "#ffae00"; } } else if (state === 'ready') { if(btn) btn.className = 'ready'; setTimeout(() => { if(btn) btn.className = ''; }, 1000); if(invoke) { invoke.disabled = false; invoke.className = 'invoke-btn ready'; } if(lbl) { lbl.innerText = "MANTENER PARA PREGUNTAR"; lbl.style.color = "#fff"; } isWordBankReady = true; } }
-    function populateDictionary() { const c = document.getElementById('word-list-container'); if(!c) return; c.innerHTML = ""; spiritScript.forEach(w => { const s = document.createElement('div'); s.innerText = w; s.className="word-item"; c.appendChild(s); }); }
-
-    // --- SYSTEM START ---
-    window.startSystem = async function() {
-        const btn = document.getElementById('btn-enter-system'); btn.innerText = "SOLICITANDO ACCESO..."; btn.disabled = true;
-        const bgAudio = document.getElementById('bg-noise');
-        if (bgAudio) { try { bgAudio.muted = true; await bgAudio.play(); bgAudio.pause(); bgAudio.currentTime = 0; bgAudio.muted = false; } catch(e) { console.warn("Audio unlock warning:", e); } }
-        if('speechSynthesis' in window) { const u = new SpeechSynthesisUtterance(""); window.speechSynthesis.speak(u); window.speechSynthesis.getVoices(); }
-        try {
-            try { 
-                stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: { facingMode: "environment", width: 320, height: 240 } }); 
-            } 
-            catch(e1) { stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: { facingMode: "environment" } }); }
-            const videos = ['scan-video', 'cam-video-bg', 'seed-video', 'preview-video', 'keep-alive-video'];
-            videos.forEach(id => { const el = document.getElementById(id); if(el) { el.srcObject = stream; el.play().catch(e=>{}); } });
-            try { initAudioContext(); } catch(e) { console.log("Audio warning", e); }
-            if(GEMINI_API_KEY) validateApiKey(GEMINI_API_KEY); else updateApiStatus(null);
-            show('s-scan'); scanQR();
-        } catch(e) { alert("ERROR: SE REQUIERE CÁMARA Y MICRÓFONO.\n" + e.message); if(btn) { btn.innerText = "REINTENTAR"; btn.disabled = false; } }
-    };
-    
-    function initAudioContext() {
-        try {
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            audioCtx = new AudioContext(); destNode = audioCtx.createMediaStreamDestination(); 
-            if(stream) { 
-                micSource = audioCtx.createMediaStreamSource(stream); 
-                micGainNode = audioCtx.createGain(); 
-                micGainNode.gain.value = GAIN_MIC_MUTE; 
-                micSource.connect(micGainNode); 
-                micGainNode.connect(destNode); 
-                analyser = audioCtx.createAnalyser(); analyser.fftSize = 64; micSource.connect(analyser); 
-                dataArray = new Uint8Array(analyser.frequencyBinCount); drawVisualizer();
+        const INTELLIGENT_RESPONSES = {
+            identidad: {
+                triggers: ["quien", "eres", "nombre", "llamas", "identificate", "como", "llamar"],
+                responses: ["soy_nadie", "me_olvidaron", "un_espiritu", "estoy_muerto", "no_soy_humano", "quien_eres", "me_llamas"]
+            },
+            ubicacion: {
+                triggers: ["donde", "estas", "ubicacion", "muestrate", "aqui", "lugar", "ver", "manifiestate"],
+                responses: ["estoy_aqui", "detras_de_ti", "aqui_abajo", "aqui_dentro", "cerca", "lejos", "bajo_el_suelo", "mira_detras", "aqui_estoy"]
+            },
+            estado: {
+                triggers: ["como", "sientes", "duele", "paz", "luz", "triste", "enojado", "frio"],
+                responses: ["me_duele", "tengo_frio", "estoy_quemandome", "estoy_roto", "estoy_perdido", "estoy_sangrando", "miedo", "dolor"]
+            },
+            accion: {
+                triggers: ["quieres", "hacer", "buscas", "atacar", "daño", "vete", "largo"],
+                responses: ["ayuda", "ayudame_a_salir", "sueltame", "no_te_vayas", "ven_con_nosotros", "sigueme", "no_me_sigas", "vete", "largo"]
+            },
+            cantidad: {
+                triggers: ["cuantos", "hay", "son", "grupo", "solos", "acompañado"],
+                responses: ["somos_cuatro", "somos_muchos", "estoy_solo", "nosotros", "ellos", "nadie"]
             }
-            const bgEl = document.getElementById('bg-noise');
-            if(bgEl) { 
-                bgSourceNode = audioCtx.createMediaElementSource(bgEl); 
-                bgToLocalGain = audioCtx.createGain(); bgToLocalGain.gain.value = 3.0; 
-                bgSourceNode.connect(bgToLocalGain); bgToLocalGain.connect(audioCtx.destination); 
-                bgToPeerGain = audioCtx.createGain(); bgToPeerGain.gain.value = 0.05; 
-                bgSourceNode.connect(bgToPeerGain); bgToPeerGain.connect(destNode); 
-            }
+        };
 
-            // KEEP ALIVE OSCILLATOR (ANTI-DROP)
-            const osc = audioCtx.createOscillator();
-            const oscGain = audioCtx.createGain();
-            oscGain.gain.value = 0.001; // Silent
-            osc.connect(oscGain);
-            oscGain.connect(destNode);
-            osc.start();
-
-            const resumeAudio = () => { if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); };
-            document.body.addEventListener('touchstart', resumeAudio); document.body.addEventListener('click', resumeAudio);
-        } catch(e) {}
-    }
-
-    function drawVisualizer() {
-        const canvas = document.getElementById('mic-visualizer'); if (!canvas) return requestAnimationFrame(drawVisualizer);
-        const ctx = canvas.getContext('2d'); if (!analyser || !ctx) return requestAnimationFrame(drawVisualizer);
-        const bufferLength = analyser.frequencyBinCount; analyser.getByteFrequencyData(dataArray);
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const barWidth = (canvas.width / bufferLength) * 2.5; let barHeight; let x = 0;
-        for (let i = 0; i < bufferLength; i++) { barHeight = dataArray[i] / 2; if (barHeight > 5) ctx.fillStyle = '#00ff41'; else ctx.fillStyle = '#333'; ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight); x += barWidth + 1; }
-        requestAnimationFrame(drawVisualizer);
-    }
-
-    function openAuthModal() { document.getElementById('modal-auth').classList.add('active'); }
-    function closeAuthModal() { document.getElementById('modal-auth').classList.remove('active'); }
-    function checkAuth() { if(document.getElementById('auth-pass').value === "OBR1995@") { isStandalone = true; closeAuthModal(); updateMenuUI(); show('s-menu'); } else alert("CLAVE INCORRECTA"); }
-    function updateMenuUI() { const micBtn = document.getElementById('btn-mic-pro'); const spiritBtn = document.getElementById('btn-spirit-box'); updateStatusUI(!isStandalone); if(isStandalone) micBtn.classList.add('locked'); else micBtn.classList.remove('locked'); updateApiStatus(true); } 
-    
-    function scanQR() { 
-        const v = document.getElementById('scan-video'); const cvs = document.createElement('canvas'); const ctx = cvs.getContext('2d'); const status = document.getElementById('scan-text-status');
-        function loop() { 
-            if(isConnecting) return; 
-            if(document.getElementById('s-scan').classList.contains('active') && v.readyState===4) { 
-                cvs.width=v.videoWidth; cvs.height=v.videoHeight; ctx.drawImage(v,0,0); const c = jsQR(ctx.getImageData(0,0,cvs.width,cvs.height).data, cvs.width, cvs.height); 
-                if(c) {
-                    isConnecting = true;
-                    status.innerText = "VINCULANDO CON DETECTOR...";
-                    status.style.color = "#00ff41";
-                    connectPeer(c.data);
-                }
-            } 
-            if(!isConnecting) requestAnimationFrame(loop); 
-        } 
-        loop(); 
-    }
-
-    function connectPeer(id) { 
-        if(!id) return;
-        hostId = id; 
-        isStandalone = false; 
-        peer = new Peer(); 
-        
-        peer.on('open', () => { 
-            console.log("Peer Open");
-            updateMenuUI(); 
-            show('s-menu'); 
-            // GLOBAL REFERENCE FOR CALL
-            if(destNode) {
-                currentCall = peer.call(hostId, destNode.stream);
-                console.log("Call Started");
-            }
-        }); 
-        
-        peer.on('error', e => { 
-            console.error(e); 
-            alert("Error de conexión."); 
-            isConnecting = false;
-            document.getElementById('scan-text-status').innerText = "ESCANEAR QR DETECTOR";
-            location.reload(); 
-        }); 
-    }
-    
-    function openApiSettings() { document.getElementById('modal-api').classList.add('active'); }
-    async function saveApiKey() { alert("LA API ESTÁ FIJA, NO NECESITAS GUARDAR NADA."); }
-    async function validateApiKey(key) { updateApiStatus(true); }
-    function updateApiStatus(isValid) { const btn = document.getElementById('btn-spirit-box'); const status = document.getElementById('api-status-text'); if(!btn) return; if(isValid === true) { btn.classList.remove('locked'); status.innerText = "ACTIVO - LISTO"; status.style.color = "#00ff41"; } else { btn.classList.add('locked'); status.innerText = "REQUIERE API KEY"; status.style.color = "#ff3333"; } }
-
-    function enterMicPro() {
-        if(isStandalone) return; currentMode = 'mic_pro'; requestWakeLock(); 
-        clearInterval(passiveInterval); if(recognition) try{recognition.stop();}catch(e){} isProcessing = false;
-        const vid = document.getElementById('cam-video-bg'); if(vid) { vid.style.width = '1px'; vid.style.height = '1px'; vid.style.opacity = '0'; } 
-        document.getElementById('bg-static').style.opacity = '1'; document.getElementById('hud-layer').style.display = 'none'; document.getElementById('bg-noise').pause(); 
-        if(micGainNode) micGainNode.gain.value = 1.5; 
-        document.getElementById('ui-mic-overlay').classList.add('active'); document.getElementById('ui-spirit').classList.add('hidden'); 
-        document.getElementById('btn-wordbank').style.display = 'none'; document.getElementById('btn-location-change').style.display = 'none'; document.getElementById('btn-toggle-mode').style.display = 'none'; document.getElementById('mic-visualizer').style.display = 'block';
-        stopHudAnimation(); show('s-live');
-    }
-
-    function enterSpiritBox() { currentMode = 'spirit'; document.getElementById('modal-photo').classList.add('active'); requestWakeLock(); const pv = document.getElementById('preview-video'); if(pv && stream) { pv.srcObject = stream; pv.play(); } }
-    function closePhotoModal() { document.getElementById('modal-photo').classList.remove('active'); }
-
-    async function captureSeed() {
-        const status = document.getElementById('seed-status'); const context = document.getElementById('place-context').value; const vid = document.getElementById('preview-video');
-        if(!vid || vid.readyState !== 4) { status.innerText = "CÁMARA INICIANDO..."; return; }
-        vid.pause(); document.getElementById('preview-scan-overlay').style.display = 'block'; status.innerText = "SINTONIZANDO ENTIDAD..."; updateWordBankIcon('loading'); 
-        const isMale = Math.random() > 0.5;
-        if(isMale) { currentEntityName = MALE_NAMES[Math.floor(Math.random() * MALE_NAMES.length)]; currentPitch = 0.6 + Math.random() * 0.3; } 
-        else { currentEntityName = FEMALE_NAMES[Math.floor(Math.random() * FEMALE_NAMES.length)]; currentPitch = 1.1 + Math.random() * 0.3; }
-        currentRate = 0.7 + Math.random() * 0.3;
-        
-        // NO CAPTURE IMAGE FOR LOGIC, JUST FOR CONTEXT/DECORATION IF NEEDED
-        try {
-            const prompt = `Analiza imagen y contexto: '${context}'. Genera 50 palabras BASICAS. Nivel vocabulario: Niño de primaria. Ej: MESA, AGUA, LUZ, NO, SI, AYUDA, MAMA, PUERTA, FRIO. Prohibido palabras cultas o complejas. Solo sustantivos y verbos simples. Formato: PALABRA|PALABRA`;
-            const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({contents:[{parts:[{text: prompt}]}]}) });
-            const d = await r.json(); const txt = d.candidates?.[0]?.content?.parts?.[0]?.text || "";
-            if(txt) { let words = txt.replace(/\n/g, '|').replace(/[0-9.]/g, '').split('|').map(s => s.trim().replace(/[^a-zA-ZÀ-ÿ ]/g, '')).filter(s => s.length > 2 && !s.includes('PALABRA')); if(words.length > 10) spiritScript = words.slice(0, 50); }
-        } catch(e) { console.log("Backup usado", e); }
-        status.innerText = "ENTIDAD: " + currentEntityName; updateWordBankIcon('ready');
-        setTimeout(() => { document.getElementById('modal-photo').classList.remove('active'); document.getElementById('preview-scan-overlay').style.display = 'none'; vid.play(); startSpiritBoxActive(); }, 1500);
-    }
-    
-    function startSpiritBoxActive() {
-        document.getElementById('bg-static').style.opacity = '0'; const vid = document.getElementById('cam-video-bg'); if(vid) { vid.style.width = '1px'; vid.style.height = '1px'; vid.style.opacity = '0'; }
-        document.getElementById('hud-layer').style.display = 'block'; startHudAnimation(); document.getElementById('bg-noise').play().catch(e=>{}); 
-        if(micGainNode) micGainNode.gain.value = GAIN_MIC_MUTE; 
-        const uio = document.getElementById('ui-mic-overlay'); if(uio) uio.classList.remove('active'); const uis = document.getElementById('ui-spirit'); if(uis) uis.classList.remove('hidden');
-        document.getElementById('btn-wordbank').style.display = 'flex'; document.getElementById('btn-location-change').style.display = 'flex'; document.getElementById('btn-toggle-mode').style.display = 'flex'; document.getElementById('mic-visualizer').style.display = 'block';
-        isMicMode = false; isWordBankReady = true; populateDictionary(); initSpeech(); startPassiveLoop(); show('s-live');
-    }
-
-    function showWordBank() { populateDictionary(); document.getElementById('modal-dictionary').classList.add('active'); }
-
-    function manualLocationChange() {
-        if(isProcessing || isTuning) return; isTuning = true;
-        const btn = document.getElementById('btn-location-change'); const invoke = document.getElementById('invoke-btn'); const status = document.getElementById('invoke-status');
-        btn.classList.add('tuning'); invoke.classList.add('locked'); invoke.disabled = true;
-        if(micGainNode) micGainNode.gain.value = 0; if(bgToLocalGain) bgToLocalGain.gain.value = 5.0; 
-        status.innerText = "SINTONIZANDO..."; status.style.color = "#ff0055"; 
-        setTimeout(() => { status.innerText = "CARGANDO FRECUENCIA..."; status.style.color = "#ffae00"; const isMale = Math.random() > 0.5; if(isMale) { currentEntityName = MALE_NAMES[Math.floor(Math.random() * MALE_NAMES.length)]; currentPitch = 0.6 + Math.random() * 0.3; } else { currentEntityName = FEMALE_NAMES[Math.floor(Math.random() * FEMALE_NAMES.length)]; currentPitch = 1.1 + Math.random() * 0.3; } currentRate = 0.7 + Math.random() * 0.3; }, 1500);
-        setTimeout(() => { status.innerText = "ENTIDAD: " + currentEntityName; status.style.color = "#00ff41"; btn.classList.remove('tuning'); invoke.classList.remove('locked'); invoke.disabled = false; if(bgToLocalGain) bgToLocalGain.gain.value = 3.0; isTuning = false; setTimeout(() => { status.innerText = "MANTENER PARA PREGUNTAR"; status.style.color = "#fff"; }, 2000); }, 3000);
-    }
-
-    function startHudAnimation() {
-        const layer = document.getElementById('hud-layer'); clearInterval(hudInterval);
-        hudInterval = setInterval(() => { if(document.hidden || !document.getElementById('s-live').classList.contains('active')) return; const box = document.createElement('div'); box.className = 'hud-box'; const w = Math.floor(Math.random() * 20 + 10) + '%'; const h = Math.floor(Math.random() * 20 + 10) + '%'; const top = Math.floor(Math.random() * 80) + '%'; const left = Math.floor(Math.random() * 80) + '%'; box.style.width = w; box.style.height = h; box.style.top = top; box.style.left = left; layer.appendChild(box); setTimeout(() => box.remove(), 400); }, 800); 
-    }
-    function stopHudAnimation() { clearInterval(hudInterval); document.getElementById('hud-layer').innerHTML = ''; }
-
-    window.toggleSpiritVox = function() { 
-        if(currentMode !== 'spirit') return; isMicMode = !isMicMode;
-        const icon = document.getElementById('toggle-icon'); const btn = document.getElementById('btn-toggle-mode'); const uiSpirit = document.getElementById('ui-spirit'); const vid = document.getElementById('cam-video-bg'); const uio = document.getElementById('ui-mic-overlay');
-        if(isMicMode) {
-            icon.className = "fas fa-microphone"; btn.classList.add('mic-active'); document.getElementById('bg-static').style.opacity = '1'; if(vid) { vid.style.width = '1px'; vid.style.height = '1px'; vid.style.opacity = '0'; } document.getElementById('hud-layer').style.display = 'none'; stopHudAnimation(); document.getElementById('bg-noise').pause(); if(micGainNode) micGainNode.gain.value = 1.5; uiSpirit.classList.add('hidden'); uio.classList.add('active'); 
-            document.getElementById('btn-wordbank').style.display = 'none'; document.getElementById('btn-location-change').style.display = 'none'; clearInterval(passiveInterval); 
-        } else {
-            icon.className = "fas fa-ghost"; btn.classList.remove('mic-active'); document.getElementById('bg-static').style.opacity = '0'; if(vid) { vid.style.width = '1px'; vid.style.height = '1px'; vid.style.opacity = '0'; } document.getElementById('hud-layer').style.display = 'block'; startHudAnimation(); document.getElementById('bg-noise').play(); if(micGainNode) micGainNode.gain.value = GAIN_MIC_MUTE; uiSpirit.classList.remove('hidden'); uio.classList.remove('active'); 
-            document.getElementById('btn-wordbank').style.display = 'flex'; document.getElementById('btn-location-change').style.display = 'flex'; startPassiveLoop();
-        }
-    };
-    
-    // --- RECONOCIMIENTO SAFE ---
-    function pressFinger() {
-        if(isProcessing || isMicMode || !isWordBankReady || isTuning) return; 
-        isProcessing = true; isHoldingButton = true; 
-        
-        window.speechSynthesis.cancel();
-        clearInterval(passiveInterval); 
-        document.getElementById('spirit-text').innerText = "";
-        document.getElementById('spirit-text').style.opacity = 0;
-
-        if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-        document.getElementById('invoke-btn').classList.add('active'); document.getElementById('invoke-status').innerText = "ESCUCHANDO..."; 
-        
-        const vid = document.getElementById('cam-video-bg'); const cvs = document.createElement('canvas'); cvs.width=320; cvs.height=240; if(vid && vid.readyState >= 2) { cvs.getContext('2d').drawImage(vid,0,0,320,240); window.currentImageB64 = cvs.toDataURL('image/jpeg', 0.5).split(',')[1]; }
-        if(micGainNode) micGainNode.gain.value = GAIN_MIC_TALK; 
-        startRecognitionSafely();
-    }
-
-    function releaseFinger() {
-        isHoldingButton = false; if(isMicMode) return; 
-        document.getElementById('invoke-btn').classList.remove('active'); document.getElementById('invoke-status').innerText = "MANTENER PARA PREGUNTAR";
-        if(recognition) recognition.stop(); if(micGainNode) micGainNode.gain.value = GAIN_MIC_MUTE; 
-        setTimeout(() => { if(isProcessing) { triggerFallback(); } }, 4000); 
-    }
-
-    function startRecognitionSafely() {
-        if(recognition && !isRecActive) {
-            try { recognition.start(); } catch(e) { console.error("Rec start error:", e); }
-        }
-    }
-
-    function triggerFallback() {
-        if(!isProcessing) return; const word = spiritScript[Math.floor(Math.random() * spiritScript.length)]; showSpiritText(word); speakWithEcho(word); isProcessing = false; startPassiveLoop();
-    }
-
-    function initSpeech() {
-        if('webkitSpeechRecognition' in window) {
-            recognition = new webkitSpeechRecognition(); recognition.lang = 'es-ES'; recognition.continuous = false; recognition.interimResults = false;
+        const App = () => {
+            const [isLoaded, setIsLoaded] = useState(false);
+            const [loadProgress, setLoadProgress] = useState(0);
+            const [isOn, setIsOn] = useState(false);
+            const [isStarting, setIsStarting] = useState(false);
+            const [statusText, setStatusText] = useState("EN ESPERA");
+            const [detectedWord, setDetectedWord] = useState("");
+            const [currentAudio, setCurrentAudio] = useState(null);
             
-            // SEMAFORO DE ESTADO
-            recognition.onstart = () => { isRecActive = true; };
-            recognition.onend = () => { isRecActive = false; if (isHoldingButton) startRecognitionSafely(); };
-            
-            recognition.onresult = async e => {
-                if (!e || !e.results || !e.results[0] || !e.results[0][0]) {
-                    console.warn("Speech result invalid"); return; 
-                }
+            const videoRef = useRef(null);
+            const audioBuffers = useRef({});
+            const audioContext = useRef(null);
+            const analyser = useRef(null);
+            const backgroundSource = useRef(null);
+            const voiceSource = useRef(null);
+            const recognition = useRef(null);
+            const nextRandomTime = useRef(0);
+            const isSpeaking = useRef(false);
+            const canvasRef = useRef(null);
+            const animationRef = useRef(null);
 
-                let rawText = e.results[0][0].transcript.trim();
-                let cleanText = rawText.charAt(0).toUpperCase() + rawText.slice(1);
-                
-                const questionStarters = ["QUE", "COMO", "CUANDO", "DONDE", "QUIEN", "POR", "CUANTOS", "ERES", "ESTAS", "HAY", "PUEDES", "SABES"];
-                const firstWord = cleanText.split(' ')[0].toUpperCase().replace(/[^A-Z]/g, '');
-                if (questionStarters.includes(firstWord)) { if (!cleanText.endsWith('?')) cleanText += '?'; if (!cleanText.startsWith('¿')) cleanText = '¿' + cleanText; }
+            useEffect(() => {
+                const loadAllAudios = async () => {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    audioContext.current = new AudioCtx();
+                    analyser.current = audioContext.current.createAnalyser();
+                    analyser.current.fftSize = 256; 
+                    analyser.current.connect(audioContext.current.destination);
 
-                document.getElementById('user-transcript').innerText = `> ${cleanText}`;
-                
-                try {
-                    const prompt = `ACTUA COMO UN ESPIRITU LLAMADO ${currentEntityName}.
-                    PREGUNTA DEL INVESTIGADOR: "${cleanText}"
-                    TU RESPUESTA DEBE SER:
-                    - CORTA (1 o 2 palabras).
-                    - DIRECTA (Responde exactamente lo que se pregunta).
-                    - SIN RELLENO (No digas "soy", "estoy", "mi nombre es").
-                    - COHERENTE (Si preguntan color, di un color. Si preguntan nombre, di tu nombre).
-                    EJEMPLOS:
-                    P: "¿Como te llamas?" R: "${currentEntityName}"
-                    P: "¿Estas aqui?" R: "SI"
-                    P: "¿Que quieres?" R: "PAZ"
-                    P: "¿Te duele?" R: "MUCHO"
-                    RESPONDE AHORA:`;
-                    
-                    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({contents:[{parts:[{text:prompt}]}]}) });
-                    const d = await r.json(); 
-                    let ans = d.candidates[0].content.parts[0].text.toUpperCase();
-                    
-                    const banned = ["ENTENDIDO", "CLARO", "HOLA", "SOY", "ME LLAMO", "ESTOY", "PREGUNTA", "RESPUESTA"];
-                    banned.forEach(b => ans = ans.replace(b, ""));
-                    ans = ans.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/[^A-ZÑÁÉÍÓÚ ]/g, '').trim();
-                    
-                    if(ans.length < 2) { triggerFallback(); }
-                    else {
-                        const words = ans.split(' ').filter(w => w.length > 0); if(words.length > 3) ans = words.slice(0, 3).join(' '); 
-                        document.getElementById('user-transcript').innerText = "";
-                        showSpiritText(ans); speakWithEcho(ans); setTimeout(startPassiveLoop, 15000);
+                    const total = PHRASE_LIST.length + 1;
+                    let loaded = 0;
+
+                    const updateProgress = () => {
+                        loaded++;
+                        setLoadProgress(Math.round((loaded / total) * 100));
+                        if (loaded === total) setTimeout(() => setIsLoaded(true), 1500); // 1.5s extra para ver el logo
+                    };
+
+                    try {
+                        const bgRes = await fetch(BACKGROUND_AUDIO);
+                        const bgBuffer = await bgRes.arrayBuffer();
+                        audioBuffers.current['BACKGROUND'] = await audioContext.current.decodeAudioData(bgBuffer);
+                        updateProgress();
+                    } catch (e) { updateProgress(); }
+
+                    for (const phrase of PHRASE_LIST) {
+                        try {
+                            const res = await fetch(`${AUDIO_BASE_PATH}${phrase}.mp3`);
+                            if (res.ok) {
+                                const buffer = await res.arrayBuffer();
+                                audioBuffers.current[phrase] = await audioContext.current.decodeAudioData(buffer);
+                            } else { updateProgress(); }
+                        } catch (e) { updateProgress(); }
+                        updateProgress();
                     }
-                } catch(x) { console.error(x); triggerFallback(); } isProcessing = false; 
-            };
-            
-            recognition.onerror = (e) => { 
-                console.log("Rec Error:", e.error);
-                isRecActive = false;
-                if (isHoldingButton && (e.error === 'no-speech' || e.error === 'network')) {
-                    recognition.abort(); // Force stop
-                    setTimeout(() => startRecognitionSafely(), 100);
-                } else if (!isHoldingButton) {
-                    isProcessing = false; startPassiveLoop(); 
+                };
+                loadAllAudios();
+            }, []);
+
+            const handleTogglePower = async () => {
+                if (isOn) {
+                    setIsOn(false);
+                    stopAll();
+                    setStatusText("SISTEMA DETENIDO");
+                    if (videoRef.current && videoRef.current.srcObject) {
+                        videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+                        videoRef.current.srcObject = null;
+                    }
+                } else {
+                    setIsStarting(true);
+                    setStatusText("INICIANDO...");
+                    try {
+                        if (audioContext.current && audioContext.current.state === 'suspended') {
+                            await audioContext.current.resume();
+                        }
+                        const stream = await navigator.mediaDevices.getUserMedia({ 
+                            video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
+                            audio: true 
+                        });
+                        if (videoRef.current) videoRef.current.srcObject = stream;
+                        
+                        const micSource = audioContext.current.createMediaStreamSource(stream);
+                        micSource.connect(analyser.current);
+
+                        setIsOn(true);
+                        setStatusText("ESCANEANDO...");
+                    } catch (err) {
+                        setStatusText("ERROR CAMARA");
+                        setIsOn(true); 
+                    } finally {
+                        setIsStarting(false);
+                    }
                 }
             };
-        }
-    }
 
-    function startPassiveLoop() {
-        clearInterval(passiveInterval);
-        passiveInterval = setInterval(() => { if(!isProcessing && !isMicMode && document.getElementById('s-live').classList.contains('active')) { const word = spiritScript[Math.floor(Math.random() * spiritScript.length)]; showSpiritText(word); speakWithEcho(word); } }, 8000 + Math.random()*7000);
-    }
+            const playSound = (bufferName, isBackground = false, volume = 1.0) => {
+                if (!audioContext.current || !audioBuffers.current[bufferName]) return;
+                
+                const source = audioContext.current.createBufferSource();
+                source.buffer = audioBuffers.current[bufferName];
+                const gainNode = audioContext.current.createGain();
+                gainNode.gain.value = volume;
+                
+                source.connect(gainNode);
+                gainNode.connect(analyser.current);
 
-    function showSpiritText(t) { const el = document.getElementById('spirit-text'); if(el) { el.innerText = t; el.style.opacity = 1; setTimeout(()=>el.style.opacity=0, 4000); } }
+                if (isBackground) {
+                    source.loop = true;
+                    backgroundSource.current = source;
+                    source.start(0);
+                } else {
+                    if (voiceSource.current) try { voiceSource.current.stop(); } catch(e){}
+                    voiceSource.current = source;
+                    isSpeaking.current = true;
+                    setCurrentAudio(bufferName);
+                    source.start(0);
+                    source.onended = () => {
+                        isSpeaking.current = false;
+                        setCurrentAudio(null);
+                    };
+                }
+            };
 
-    function speakWithEcho(text) {
-        if('speechSynthesis' in window) {
-            window.speechSynthesis.cancel();
-            if(bgToLocalGain) bgToLocalGain.gain.value = 0.5; 
-            if(micGainNode && !isMicMode) { micGainNode.gain.value = GAIN_MIC_LISTEN_AI; }
-            const safeText = text.toLowerCase();
-            const u1 = new SpeechSynthesisUtterance(safeText); u1.lang = 'es-ES'; u1.pitch = currentPitch; u1.rate = currentRate; u1.volume = 1.0;
-            u1.onend = function() { setTimeout(() => { if(!isProcessing && !isMicMode) { if(bgToLocalGain) bgToLocalGain.gain.value = 3.0; if(micGainNode) micGainNode.gain.value = GAIN_MIC_MUTE; } }, 500); };
-            window.speechSynthesis.speak(u1); 
-        }
-    }
-    
-    function logout() { if(peer) peer.destroy(); location.reload(); }
+            const stopAll = () => {
+                if (backgroundSource.current) backgroundSource.current.stop();
+                if (voiceSource.current) voiceSource.current.stop();
+                isSpeaking.current = false;
+                setCurrentAudio(null);
+            };
 
-</script>
+            const drawWaveform = () => {
+                if (!isOn || !analyser.current || !canvasRef.current) return;
+                const canvas = canvasRef.current;
+                const ctx = canvas.getContext('2d');
+                const bufferLength = analyser.current.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
+                analyser.current.getByteTimeDomainData(dataArray);
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = '#ef4444';
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#ef4444';
+                ctx.beginPath();
+
+                const sliceWidth = canvas.width * 1.0 / bufferLength;
+                let x = 0;
+
+                for(let i = 0; i < bufferLength; i++) {
+                    const v = dataArray[i] / 128.0;
+                    const y = v * canvas.height / 2;
+                    if(i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                    x += sliceWidth;
+                }
+                ctx.lineTo(canvas.width, canvas.height/2);
+                ctx.stroke();
+                animationRef.current = requestAnimationFrame(drawWaveform);
+            };
+
+            useEffect(() => {
+                if (isOn) {
+                    drawWaveform();
+                } else {
+                    cancelAnimationFrame(animationRef.current);
+                }
+                return () => cancelAnimationFrame(animationRef.current);
+            }, [isOn]);
+
+            useEffect(() => {
+                if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                    recognition.current = new SpeechRecognition();
+                    recognition.current.continuous = true;
+                    recognition.current.lang = 'es-MX';
+                    recognition.current.interimResults = false;
+                    recognition.current.onresult = (event) => {
+                        const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase();
+                        setDetectedWord(transcript);
+                        processQuestion(transcript);
+                    };
+                }
+            }, []);
+
+            const processQuestion = (text) => {
+                if (!isOn) return;
+                let matchFound = false;
+                for (const [category, data] of Object.entries(INTELLIGENT_RESPONSES)) {
+                    if (data.triggers.some(trigger => text.includes(trigger))) {
+                        const response = data.responses[Math.floor(Math.random() * data.responses.length)];
+                        setStatusText(`DETECTADO: ${category.toUpperCase()}`);
+                        playSound(response, false, 1.0);
+                        matchFound = true;
+                        nextRandomTime.current = Date.now() + 4000;
+                        break;
+                    }
+                }
+                if (!matchFound) setStatusText("ESCUCHANDO...");
+            };
+
+            useEffect(() => {
+                let interval;
+                if (isOn) {
+                    playSound('BACKGROUND', true, 0.4);
+                    try { recognition.current.start(); } catch(e){}
+                    interval = setInterval(() => {
+                        const now = Date.now();
+                        if (!isSpeaking.current && now > nextRandomTime.current) {
+                            if (Math.random() > 0.6) {
+                                const randomPhrase = PHRASE_LIST[Math.floor(Math.random() * PHRASE_LIST.length)];
+                                playSound(randomPhrase, false, 0.9);
+                                nextRandomTime.current = now + (Math.random() * 4000 + 4000);
+                            }
+                        }
+                    }, 1000);
+                } else {
+                    try { recognition.current.stop(); } catch(e){}
+                }
+                return () => clearInterval(interval);
+            }, [isOn]);
+
+            // --- RENDERIZADO ---
+            
+            // 1. PANTALLA DE CARGA CON LOGO
+            if (!isLoaded) {
+                return (
+                    <div className="h-screen w-full bg-black flex flex-col items-center justify-center font-mono relative overflow-hidden">
+                        {/* Fondo animado sutil */}
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-red-900/20 via-black to-black animate-pulse"></div>
+                        
+                        <div className="z-10 flex flex-col items-center">
+                            {/* LOGO CON EFECTO LATIDO */}
+                            <img 
+                                src={LOGO_PATH} 
+                                alt="OBR Logo" 
+                                className="w-48 h-48 object-contain mb-8 logo-spectral"
+                                onError={(e) => { e.target.style.display = 'none'; }} 
+                            />
+                            
+                            <div className="text-red-600 text-xs tracking-[0.3em] mb-4 animate-pulse">INICIANDO SISTEMA...</div>
+                            
+                            <div className="w-64 h-1 bg-gray-900 rounded-full overflow-hidden border border-red-900/30">
+                                <div className="h-full bg-red-600 transition-all duration-300" style={{ width: `${loadProgress}%` }}></div>
+                            </div>
+                            <p className="text-[10px] text-gray-500 mt-2">{loadProgress}% CARGADO</p>
+                        </div>
+                    </div>
+                );
+            }
+
+            // 2. APP PRINCIPAL
+            return (
+                <div className="h-screen w-full bg-black relative overflow-hidden">
+                    <video id="camera-feed" ref={videoRef} autoPlay playsInline muted></video>
+                    <div className="night-vision-overlay"></div>
+                    <div className="tactical-grid"></div>
+
+                    <div className="ui-layer px-4 py-6 justify-between">
+                        <div className="flex justify-between items-start bg-black/60 p-2 rounded border-l-4 border-red-600 backdrop-blur-sm shadow-lg">
+                            <div>
+                                <h1 className="text-xl font-bold text-white tracking-widest flex items-center gap-2">
+                                    <IconGhost className="w-5 h-5 text-red-500" /> OBR-VOX
+                                </h1>
+                                <p className="text-[10px] text-red-400 mt-1 font-bold">RED EDITION v10</p>
+                            </div>
+                            <div className="text-right">
+                                <div className="text-[9px] text-gray-400 tracking-widest">ESTADO</div>
+                                <div className={`text-xs font-black tracking-wider ${isOn ? 'text-green-500' : 'text-red-600'}`}>
+                                    {isOn ? 'EN LÍNEA' : 'OFFLINE'}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex-1 flex flex-col items-center justify-center">
+                            {currentAudio ? (
+                                <div className="text-center w-full slam-in">
+                                    <h2 className="terror-text text-7xl font-black uppercase leading-none break-words px-2">
+                                        {currentAudio.replace(/_/g, " ")}
+                                    </h2>
+                                </div>
+                            ) : (
+                                isOn && (
+                                    <div className="text-center opacity-70">
+                                        <p className="text-[10px] text-red-500 tracking-[0.5em] animate-pulse bg-black/80 px-2 py-1">BUSCANDO SEÑAL...</p>
+                                    </div>
+                                )
+                            )}
+                        </div>
+
+                        <div className="flex flex-col gap-4">
+                            <div className="h-6 text-center">
+                                {isOn && detectedWord && (
+                                    <span className="text-xs font-mono text-white bg-red-900/80 px-3 py-1 rounded shadow-lg border border-red-500/30">
+                                        TU: {detectedWord}
+                                    </span>
+                                )}
+                            </div>
+
+                            <div className="h-20 w-full bg-black/90 border-x-2 border-red-600 relative overflow-hidden">
+                                <canvas ref={canvasRef} width="400" height="100" className="w-full h-full"></canvas>
+                                <div className="absolute top-1 right-2 text-[8px] text-red-500 animate-pulse">REC ●</div>
+                            </div>
+
+                            <button 
+                                onClick={handleTogglePower}
+                                disabled={isStarting}
+                                className={`w-full h-20 clip-path-polygon font-black tracking-[0.2em] text-xl transition-all active:scale-[0.98] flex items-center justify-center gap-3 border-2 shadow-2xl ${
+                                    isOn 
+                                    ? 'bg-red-800 text-white border-red-500 shadow-[0_0_40px_rgba(220,38,38,0.6)]' 
+                                    : 'bg-gray-900 text-gray-500 border-gray-700'
+                                }`}
+                                style={{ clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)' }}
+                            >
+                                {isStarting ? (
+                                    <IconActivity className="w-8 h-8 animate-spin" />
+                                ) : (
+                                    <>
+                                        <IconPower className="w-6 h-6" />
+                                        {isOn ? 'APAGAR' : 'ENCENDER'}
+                                    </>
+                                )}
+                            </button>
+                            
+                            <div className="text-center text-[8px] text-gray-500 font-mono tracking-widest opacity-50">
+                                SISTEMA DE COMUNICACIÓN OBR // V.3.0
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
 </body>
 </html>
