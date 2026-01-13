@@ -17,7 +17,7 @@
     <style>
         body { 
             background-color: #000;
-            color: #ef4444; /* Rojo base */
+            color: #ef4444;
             font-family: 'Courier New', Courier, monospace;
             overflow: hidden;
             user-select: none;
@@ -67,7 +67,6 @@
             z-index: 2;
         }
 
-        /* --- EFECTO TERROR PARA EL TEXTO --- */
         .terror-text {
             color: #ffffff;
             text-shadow: 4px 4px 0px #8b0000;
@@ -113,12 +112,10 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // --- CONFIGURACIÓN ---
         const AUDIO_BASE_PATH = 'audios/'; 
         const BACKGROUND_AUDIO = 'FONDO_1.mp3';
         const LOGO_PATH = 'obr-logo.png';
 
-        // --- ICONOS ---
         const IconGhost = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M9 10h.01"/><path d="M15 10h.01"/><path d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"/></svg>;
         const IconActivity = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>;
         const IconPower = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>;
@@ -127,7 +124,6 @@
         const IconX = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
         const IconAlert = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>;
 
-        // --- UTILIDAD DE LIMPIEZA ---
         const cleanFilename = (text) => {
             return text.toLowerCase().trim()
                 .replace(/ /g, "_")
@@ -136,7 +132,6 @@
                 .replace(/[¿?¡!,.]/g, "");
         };
 
-        // --- BANCO DE FRASES ---
         const PHRASE_LIST = [
             "Juan", "María", "Pedro", "Ana", "Luis", "Carmen", "Carlos", "Lucía", 
             "Miguel", "Elena", "Roberto", "Sofía", "David", "Laura", "José", "Isabel",
@@ -201,7 +196,7 @@
             const audioContext = useRef(null);
             const analyser = useRef(null);
             const backgroundSource = useRef(null);
-            const backgroundGainNode = useRef(null); // Ref para Ducking
+            const backgroundGainNode = useRef(null); 
             const voiceSource = useRef(null);
             const recognition = useRef(null);
             const nextRandomTime = useRef(0);
@@ -209,7 +204,6 @@
             const canvasRef = useRef(null);
             const animationRef = useRef(null);
 
-            // 1. CARGA DE AUDIOS
             useEffect(() => {
                 const loadAllAudios = async () => {
                     const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -259,7 +253,6 @@
                 loadAllAudios();
             }, []);
 
-            // 2. PLAY SOUND + DUCKING LOGIC
             const playSound = (keyName, isBackground = false) => {
                 if (!audioContext.current) return;
                 let buffer = audioBuffers.current[keyName];
@@ -270,13 +263,12 @@
                 const gainNode = audioContext.current.createGain();
                 
                 source.connect(gainNode);
-                gainNode.connect(analyser.current); // Visualizador
+                gainNode.connect(analyser.current);
 
                 if (isBackground) {
                     source.loop = true;
-                    // FONDO A VOLUMEN BAJO (0.3)
                     gainNode.gain.value = 0.3; 
-                    backgroundGainNode.current = gainNode; // Guardamos ref para ducking
+                    backgroundGainNode.current = gainNode;
                     backgroundSource.current = source;
                     source.start(0);
                 } else {
@@ -285,16 +277,13 @@
                     isSpeaking.current = true;
                     setCurrentAudio(keyName); 
                     
-                    // VOZ A VOLUMEN MUY ALTO (3.0)
                     gainNode.gain.value = 3.0; 
 
-                    // --- EFECTO DUCKING ---
-                    // Bajar fondo cuando empieza la voz
                     if (backgroundGainNode.current) {
                         const now = audioContext.current.currentTime;
                         backgroundGainNode.current.gain.cancelScheduledValues(now);
                         backgroundGainNode.current.gain.setValueAtTime(backgroundGainNode.current.gain.value, now);
-                        backgroundGainNode.current.gain.linearRampToValueAtTime(0.1, now + 0.1); // Bajar a 0.1
+                        backgroundGainNode.current.gain.linearRampToValueAtTime(0.1, now + 0.1); 
                     }
 
                     source.start(0);
@@ -302,13 +291,11 @@
                     source.onended = () => {
                         isSpeaking.current = false;
                         setCurrentAudio(null);
-                        
-                        // Subir fondo cuando termina la voz
                         if (backgroundGainNode.current) {
                             const now = audioContext.current.currentTime;
                             backgroundGainNode.current.gain.cancelScheduledValues(now);
                             backgroundGainNode.current.gain.setValueAtTime(backgroundGainNode.current.gain.value, now);
-                            backgroundGainNode.current.gain.linearRampToValueAtTime(0.3, now + 0.5); // Subir a 0.3
+                            backgroundGainNode.current.gain.linearRampToValueAtTime(0.3, now + 0.5);
                         }
                     };
                 }
@@ -321,63 +308,34 @@
                 setCurrentAudio(null);
             };
 
-            // 3. LOGICA ALEATORIA (SIN INTELIGENCIA)
-            const processQuestion = (text) => {
-                if (!isOn) return;
+            const playPreview = (phraseName) => {
+                if (!audioContext.current) return;
+                if (audioContext.current.state === 'suspended') audioContext.current.resume();
                 
-                // Buscar si alguna palabra del usuario coincide DIRECTAMENTE con un audio
-                const cleanText = cleanFilename(text);
-                const availablePhrases = PHRASE_LIST.filter(p => audioBuffers.current[p]);
-                
-                const directMatch = availablePhrases.find(phrase => cleanText.includes(cleanFilename(phrase)));
-
-                if (directMatch) {
-                    // Si coincide palabra clave, la reproduce
-                    setStatusText(`ECO DETECTADO`);
-                    playSound(directMatch, false);
-                    nextRandomTime.current = Date.now() + 8000; // Pausa larga
-                } 
-                else {
-                    // Si no, lanza algo random (Pareidolia)
-                    if (Math.random() < 0.8) {
-                        setStatusText("BARRIDO ACTIVO...");
-                        if (availablePhrases.length > 0) {
-                            const randomPhrase = availablePhrases[Math.floor(Math.random() * availablePhrases.length)];
-                            playSound(randomPhrase, false);
-                            nextRandomTime.current = Date.now() + 8000; // Pausa larga
-                        }
-                    }
+                let bgSource = null;
+                if (audioBuffers.current['BACKGROUND']) {
+                    bgSource = audioContext.current.createBufferSource();
+                    bgSource.buffer = audioBuffers.current['BACKGROUND'];
+                    const bgGain = audioContext.current.createGain();
+                    bgGain.gain.value = 0.1; 
+                    bgSource.connect(bgGain);
+                    bgGain.connect(audioContext.current.destination);
+                    bgSource.start(0);
                 }
+
+                const vSource = audioContext.current.createBufferSource();
+                vSource.buffer = audioBuffers.current[phraseName];
+                const vGain = audioContext.current.createGain();
+                vGain.gain.value = 3.0; 
+                vSource.connect(vGain);
+                vGain.connect(audioContext.current.destination);
+                vSource.start(0);
+
+                vSource.onended = () => {
+                    if(bgSource) bgSource.stop();
+                };
             };
 
-            // 4. BARRIDO AUTOMÁTICO
-            useEffect(() => {
-                let interval;
-                if (isOn) {
-                    playSound('BACKGROUND', true); // Iniciar Fondo
-                    try { recognition.current.start(); } catch(e){}
-                    interval = setInterval(() => {
-                        const now = Date.now();
-                        // Solo si no está hablando y pasó el tiempo de espera
-                        if (!isSpeaking.current && now > nextRandomTime.current) {
-                            if (Math.random() > 0.7) {
-                                const availablePhrases = PHRASE_LIST.filter(p => audioBuffers.current[p]);
-                                if (availablePhrases.length > 0) {
-                                    const randomPhrase = availablePhrases[Math.floor(Math.random() * availablePhrases.length)];
-                                    playSound(randomPhrase, false);
-                                    // 8 a 12 segundos entre frases aleatorias
-                                    nextRandomTime.current = now + (Math.random() * 4000 + 8000); 
-                                }
-                            }
-                        }
-                    }, 1000);
-                } else {
-                    try { recognition.current.stop(); } catch(e){}
-                }
-                return () => clearInterval(interval);
-            }, [isOn]);
-
-            // VISUALIZADOR
             const drawWaveform = () => {
                 if (!isOn || !analyser.current || !canvasRef.current) return;
                 const canvas = canvasRef.current;
@@ -411,8 +369,6 @@
                 return () => cancelAnimationFrame(animationRef.current);
             }, [isOn]);
 
-            // ... (Resto de funciones: handleTogglePower, SpeechRecognition init igual que antes) ...
-            // Simplificado para ahorrar espacio, la lógica de init es igual.
             useEffect(() => {
                 if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
                     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -428,34 +384,89 @@
                 }
             }, []);
 
-            const playPreview = (phraseName) => {
-                if (!audioContext.current) return;
-                if (audioContext.current.state === 'suspended') audioContext.current.resume();
+            const processQuestion = (text) => {
+                if (!isOn) return;
+                const cleanText = cleanFilename(text);
+                const availablePhrases = PHRASE_LIST.filter(p => audioBuffers.current[p]);
                 
-                // Preview con Ducking simulado
-                const bgSource = audioContext.current.createBufferSource();
-                bgSource.buffer = audioBuffers.current['BACKGROUND'];
-                const bgGain = audioContext.current.createGain();
-                bgGain.gain.value = 0.1; // Fondo bajo
-                bgSource.connect(bgGain);
-                bgGain.connect(audioContext.current.destination);
-                bgSource.start(0);
+                const directMatch = availablePhrases.find(phrase => cleanText.includes(cleanFilename(phrase)));
 
-                const vSource = audioContext.current.createBufferSource();
-                vSource.buffer = audioBuffers.current[phraseName];
-                const vGain = audioContext.current.createGain();
-                vGain.gain.value = 3.0; // Voz Alta
-                vSource.connect(vGain);
-                vGain.connect(audioContext.current.destination);
-                vSource.start(0);
-
-                vSource.onended = () => bgSource.stop();
+                if (directMatch) {
+                    setStatusText(`ECO DETECTADO`);
+                    playSound(directMatch, false);
+                    nextRandomTime.current = Date.now() + 8000;
+                } else {
+                    if (Math.random() < 0.8) {
+                        setStatusText("BARRIDO ACTIVO...");
+                        if (availablePhrases.length > 0) {
+                            const randomPhrase = availablePhrases[Math.floor(Math.random() * availablePhrases.length)];
+                            playSound(randomPhrase, false);
+                            nextRandomTime.current = Date.now() + 8000;
+                        }
+                    }
+                }
             };
 
-            const handleTogglePowerWrapper = () => handleTogglePower(); // Wrapper simple
+            useEffect(() => {
+                let interval;
+                if (isOn) {
+                    playSound('BACKGROUND', true);
+                    try { recognition.current.start(); } catch(e){}
+                    interval = setInterval(() => {
+                        const now = Date.now();
+                        if (!isSpeaking.current && now > nextRandomTime.current) {
+                            if (Math.random() > 0.6) {
+                                const availablePhrases = PHRASE_LIST.filter(p => audioBuffers.current[p]);
+                                if (availablePhrases.length > 0) {
+                                    const randomPhrase = availablePhrases[Math.floor(Math.random() * availablePhrases.length)];
+                                    playSound(randomPhrase, false);
+                                    nextRandomTime.current = now + (Math.random() * 4000 + 4000);
+                                }
+                            }
+                        }
+                    }, 1000);
+                } else {
+                    try { recognition.current.stop(); } catch(e){}
+                }
+                return () => clearInterval(interval);
+            }, [isOn]);
 
-            // RENDERIZADO (Igual que versión anterior)
+            const handleTogglePower = async () => {
+                if (isOn) {
+                    setIsOn(false);
+                    stopAll();
+                    setStatusText("SISTEMA DETENIDO");
+                    if (videoRef.current && videoRef.current.srcObject) {
+                        videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+                        videoRef.current.srcObject = null;
+                    }
+                } else {
+                    setIsStarting(true);
+                    setStatusText("INICIANDO...");
+                    try {
+                        if (audioContext.current && audioContext.current.state === 'suspended') {
+                            await audioContext.current.resume();
+                        }
+                        const stream = await navigator.mediaDevices.getUserMedia({ 
+                            video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
+                            audio: true 
+                        });
+                        if (videoRef.current) videoRef.current.srcObject = stream;
+                        const micSource = audioContext.current.createMediaStreamSource(stream);
+                        micSource.connect(analyser.current);
+                        setIsOn(true);
+                        setStatusText("ESCANEANDO...");
+                    } catch (err) {
+                        setStatusText("ERROR CAMARA");
+                        setIsOn(true); 
+                    } finally {
+                        setIsStarting(false);
+                    }
+                }
+            };
+
             if (loadError) return <div className="h-screen bg-black text-red-500 flex items-center justify-center p-10 text-center font-mono border border-red-900"><p>ERROR FATAL: NO SE ENCONTRARON AUDIOS EN /audios/</p></div>;
+            
             if (!isLoaded) return (
                 <div className="h-screen w-full bg-black flex flex-col items-center justify-center font-mono relative overflow-hidden">
                     <div className="z-10 flex flex-col items-center">
@@ -499,7 +510,6 @@
                         </div>
 
                         <div className="flex-1 flex flex-col items-center justify-center relative">
-                            {/* TEXTO DE RESPUESTA AHORA ARRIBA DEL OSCILOSCOPIO */}
                             <div className="absolute bottom-0 w-full text-center pb-4">
                                 {currentAudio ? (
                                     <h2 className="terror-text text-5xl font-black uppercase leading-none break-words px-2 slam-in">{currentAudio}</h2>
