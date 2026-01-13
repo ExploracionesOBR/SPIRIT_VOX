@@ -93,7 +93,6 @@
             100% { transform: scale(1); opacity: 1; }
         }
 
-        /* --- EFECTO LATIDO PARA EL LOGO --- */
         .logo-spectral {
             animation: spectral-pulse 3s infinite ease-in-out;
         }
@@ -101,6 +100,18 @@
             0% { filter: drop-shadow(0 0 5px rgba(220, 38, 38, 0.2)) grayscale(100%); opacity: 0.7; transform: scale(1); }
             50% { filter: drop-shadow(0 0 25px rgba(255, 0, 0, 0.8)) grayscale(0%); opacity: 1; transform: scale(1.05); }
             100% { filter: drop-shadow(0 0 5px rgba(220, 38, 38, 0.2)) grayscale(100%); opacity: 0.7; transform: scale(1); }
+        }
+        
+        /* Scrollbar personalizada para el modal */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #1a0505;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #7f1d1d;
+            border-radius: 3px;
         }
     </style>
 </head>
@@ -111,76 +122,78 @@
         const { useState, useEffect, useRef } = React;
 
         // --- CONFIGURACIÓN ---
-        const AUDIO_BASE_PATH = './audio/';
-        const BACKGROUND_AUDIO = './FONDO_1.mp3';
-        const LOGO_PATH = './obr-logo.png';
+        const AUDIO_BASE_PATH = 'audio/';
+        const BACKGROUND_AUDIO = 'FONDO_1.mp3';
+        const LOGO_PATH = 'obr-logo.png';
 
         // --- ICONOS ---
         const IconGhost = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M9 10h.01"/><path d="M15 10h.01"/><path d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"/></svg>;
         const IconActivity = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>;
         const IconPower = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>;
+        const IconSettings = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>;
+        const IconPlay = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polygon points="5 3 19 12 5 21 5 3"/></svg>;
+        const IconX = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
 
-        // --- BANCO DE FRASES (RESUMIDO) ---
-        const PHRASE_LIST = [
-            "atras", "frio", "ayuda", "muerte", "luz", "oscuridad", "obregon", "tumba",
-            "vete", "aqui", "escucho", "miedo", "niño", "agua", "fuego", "piedra",
-            "corre", "espera", "nombre", "tiempo", "dolor", "soledad", "madre", "padre",
-            "espiritu", "señal", "ruido", "silencio", "cierra", "abre", "mira", "baja",
-            "sube", "cerca", "lejos", "tierra", "cielo", "infierno", "demonio", "angel",
-            "rojo", "negro", "sangre", "llanto", "risas", "grito", "buscar", "encontrar",
-            "hola", "adios", "estas", "nosotros", "ellos", "cuidado", "peligro", "sueño",
-            "somos_cuatro", "estamos_aca", "detras_de_ti", "tuve_un_accidente", 
-            "quiero_visitar_mi_familia", "no_me_puedo_ir", "ayudame_a_salir",
-            "estoy_perdido", "quien_eres", "busco_la_luz", "hace_frio_aqui",
-            "no_te_queremos", "dejanos_en_paz", "estoy_enterrado", "bajo_el_suelo",
-            "mira_detras", "no_respiro", "donde_estoy", "somos_muchos",
-            "ven_con_nosotros", "te_estoy_viendo", "escucha_mi_voz", "no_es_tu_lugar",
-            "estoy_quemandome", "fue_un_error", "sueltame", "ya_es_tarde",
-            "rezar_no_sirve", "estamos_esperando", "la_puerta_esta_abierta",
-            "aqui_estoy", "no_te_vayas", "escuchame", "estoy_aqui", "no_mires", 
-            "no_puedo", "ven", "mirame", "no_corras", "estoy_solo", "no_salgas", 
-            "tengo_frio", "nos_escuchan", "no_es_seguro", "quedate", "estoy_atrapado",
-            "sigueme", "no_grites", "estoy_muerto", "no_respires", "estoy_contigo",
-            "ya_viene", "estoy_cansado", "escucha_bien", "no_huyas", "me_duele",
-            "aqui_no", "esta_oscuro", "no_hay_salida", "no_me_toques", "me_llamaron",
-            "esta_cerca", "no_te_acerques", "no_duermas", "me_ves", "no_mires_atras",
-            "estoy_debajo", "no_hables", "me_oyes", "esta_aqui", "no_cierres",
-            "estoy_arriba", "no_confies", "me_quede", "aqui_dentro", "no_lo_sabes",
-            "estoy_cayendo", "no_saldra", "me_dejaron", "esta_vivo", "no_despiertes",
-            "estoy_roto", "no_entiendes", "me_llamas", "aqui_sigo", "no_lo_mires",
-            "estoy_sangrando", "no_es_real", "me_perdi", "esta_mal", "no_escuches",
-            "estoy_solo_aqui", "no_te_muevas", "me_buscan", "aqui_abajo", "no_puedo_salir",
-            "estoy_mirando", "no_lo_abras", "me_oyen", "esta_abierto", "no_me_sigas",
-            "estoy_esperando_aqui", "no_te_escondas", "me_olvidaron", "aqui_termina",
-            "no_regreses", "estoy_despierto", "no_resistas", "me_escuchas", "esta_oscuro_aqui",
-            "no_confies_en_ellos", "estoy_cerca_de_ti", "no_te_vayas_solo", "me_duele_mucho",
-            "aqui_nadie", "no_soy_humano", "estoy_atrapado_aqui", "no_lo_intentes",
-            "me_quede_atras", "esta_frio", "no_puedo_ver", "estoy_observando",
-            "no_grites_aqui", "me_dejaron_solo"
-        ];
-
-        const INTELLIGENT_RESPONSES = {
-            identidad: {
-                triggers: ["quien", "eres", "nombre", "llamas", "identificate", "como", "llamar"],
-                responses: ["soy_nadie", "me_olvidaron", "un_espiritu", "estoy_muerto", "no_soy_humano", "quien_eres", "me_llamas"]
-            },
-            ubicacion: {
-                triggers: ["donde", "estas", "ubicacion", "muestrate", "aqui", "lugar", "ver", "manifiestate"],
-                responses: ["estoy_aqui", "detras_de_ti", "aqui_abajo", "aqui_dentro", "cerca", "lejos", "bajo_el_suelo", "mira_detras", "aqui_estoy"]
-            },
-            estado: {
-                triggers: ["como", "sientes", "duele", "paz", "luz", "triste", "enojado", "frio"],
-                responses: ["me_duele", "tengo_frio", "estoy_quemandome", "estoy_roto", "estoy_perdido", "estoy_sangrando", "miedo", "dolor"]
-            },
-            accion: {
-                triggers: ["quieres", "hacer", "buscas", "atacar", "daño", "vete", "largo"],
-                responses: ["ayuda", "ayudame_a_salir", "sueltame", "no_te_vayas", "ven_con_nosotros", "sigueme", "no_me_sigas", "vete", "largo"]
-            },
-            cantidad: {
-                triggers: ["cuantos", "hay", "son", "grupo", "solos", "acompañado"],
-                responses: ["somos_cuatro", "somos_muchos", "estoy_solo", "nosotros", "ellos", "nadie"]
-            }
+        // --- UTILIDAD DE LIMPIEZA DE NOMBRES ---
+        const cleanFilename = (text) => {
+            return text.toLowerCase().trim()
+                .replace(/ /g, "_")
+                .replace(/ñ/g, "n")
+                .replace(/[á]/g, "a").replace(/[é]/g, "e").replace(/[í]/g, "i").replace(/[ó]/g, "o").replace(/[ú]/g, "u")
+                .replace(/[¿?¡!,.]/g, "");
         };
+
+        // --- BANCO DE FRASES DISPONIBLE ---
+        const PHRASE_LIST = [
+            // Respuestas Específicas
+            "Juan", "María", "Pedro", "Ana", "Luis", "Carmen", "Carlos", "Lucía", 
+            "Miguel", "Elena", "Roberto", "Sofía", "David", "Laura", "José", "Isabel",
+            "Me llamo Juan", "Soy María", "Mi nombre es Pedro", "No tengo nombre", 
+            "Me dicen el sombra", "Soy el guardián", "Olvidé mi nombre", "Nadie",
+            "Uno", "Dos", "Tres", "Cinco", "Seis", "Siete", "Ocho", "Nueve", "Diez",
+            "Somos dos", "Somos tres", "Somos cinco", "Somos seis", "Somos legión", 
+            "Hay muchos aquí", "Solo yo", "Incontables", "Cientos", "Todos nosotros",
+
+            // Frases Completas
+            "somos cuatro", "estamos acá", "detrás de ti", "tuve un accidente", 
+            "quiero visitar mi familia", "no me puedo ir", "ayúdame a salir",
+            "estoy perdido", "quién eres", "busco la luz", "hace frío aquí",
+            "no te queremos", "déjanos en paz", "estoy enterrado", "bajo el suelo",
+            "mira detrás", "no respiro", "dónde estoy", "somos muchos",
+            "ven con nosotros", "te estoy viendo", "escucha mi voz", "no es tu lugar",
+            "estoy quemándome", "fue un error", "suéltame", "ya es tarde",
+            "rezar no sirve", "estamos esperando", "la puerta está abierta",
+
+            // Palabras Simples
+            "atrás", "frío", "ayuda", "muerte", "luz", "oscuridad", "obregón", "tumba",
+            "vete", "aquí", "escucho", "miedo", "niño", "agua", "fuego", "piedra",
+            "corre", "espera", "nombre", "tiempo", "dolor", "soledad", "madre", "padre",
+            "espíritu", "señal", "ruido", "silencio", "cierra", "abre", "mira", "baja",
+            "sube", "cerca", "lejos", "tierra", "cielo", "infierno", "demonio", "ángel",
+            "rojo", "negro", "sangre", "llanto", "risas", "grito", "buscar", "encontrar",
+            "hola", "adiós", "estás", "nosotros", "ellos", "cuidado", "peligro", "sueño",
+            "Aquí estoy", "No te vayas", "Escúchame", "Estoy aquí", "No mires", 
+            "No puedo", "Ven", "Mírame", "No corras", "Estoy solo", "No salgas", 
+            "Tengo frío", "Nos escuchan", "No es seguro", "Quédate", "Estoy atrapado", 
+            "No me ves", "Sígueme", "No grites", "Estoy muerto", "No respires", 
+            "Estoy contigo", "No lo hagas", "Ya viene", "Estoy cansado", "Escucha bien", 
+            "No huyas", "Me duele", "Aquí no", "Está oscuro", "No hay salida", 
+            "No me toques", "Me llamaron", "Está cerca", "No te acerques", 
+            "No duermas", "Me ves", "No mires atrás", "Estoy debajo", "No hables", 
+            "Me oyes", "Está aquí", "No cierres", "Estoy arriba", "No confíes", 
+            "Me quedé", "Aquí dentro", "No lo sabes", "Estoy cayendo", "No saldrá", 
+            "Me dejaron", "Está vivo", "No despiertes", "Estoy roto", "No entiendes", 
+            "Me llamas", "Aquí sigo", "No lo mires", "Estoy sangrando", "No es real", 
+            "Me perdí", "Está mal", "No escuches", "Estoy solo aquí", "No te muevas", 
+            "Me buscan", "Aquí abajo", "No puedo salir", "Estoy mirando", "No lo abras", 
+            "Me oyen", "Está abierto", "No me sigas", "Estoy esperando aquí", 
+            "No te escondas", "Me olvidaron", "Aquí termina", "No regreses", 
+            "Estoy despierto", "No resistas", "Me escuchas", "Está oscuro aquí", 
+            "No confíes en ellos", "Estoy cerca de ti", "No te vayas solo", 
+            "Me duele mucho", "Aquí nadie", "No soy humano", "Estoy atrapado aquí", 
+            "No lo intentes", "Me quedé atrás", "Está frío", "No puedo ver", 
+            "Estoy observando", "No grites aquí", "Me dejaron solo"
+        ];
 
         const App = () => {
             const [isLoaded, setIsLoaded] = useState(false);
@@ -190,6 +203,10 @@
             const [statusText, setStatusText] = useState("EN ESPERA");
             const [detectedWord, setDetectedWord] = useState("");
             const [currentAudio, setCurrentAudio] = useState(null);
+            
+            // Estado para el menú de configuración
+            const [showSettings, setShowSettings] = useState(false);
+            const [loadedFilesList, setLoadedFilesList] = useState([]); // Lista de audios cargados OK
             
             const videoRef = useRef(null);
             const audioBuffers = useRef({});
@@ -203,6 +220,7 @@
             const canvasRef = useRef(null);
             const animationRef = useRef(null);
 
+            // 1. CARGA DE AUDIOS
             useEffect(() => {
                 const loadAllAudios = async () => {
                     const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -211,36 +229,77 @@
                     analyser.current.fftSize = 256; 
                     analyser.current.connect(audioContext.current.destination);
 
-                    const total = PHRASE_LIST.length + 1;
+                    const uniquePhrases = [...new Set(PHRASE_LIST)];
+                    const total = uniquePhrases.length + 1;
                     let loaded = 0;
 
                     const updateProgress = () => {
                         loaded++;
                         setLoadProgress(Math.round((loaded / total) * 100));
-                        if (loaded === total) setTimeout(() => setIsLoaded(true), 1500); // 1.5s extra para ver el logo
+                        if (loaded === total) setTimeout(() => setIsLoaded(true), 1500); 
                     };
 
                     try {
                         const bgRes = await fetch(BACKGROUND_AUDIO);
-                        const bgBuffer = await bgRes.arrayBuffer();
-                        audioBuffers.current['BACKGROUND'] = await audioContext.current.decodeAudioData(bgBuffer);
-                        updateProgress();
-                    } catch (e) { updateProgress(); }
+                        if (bgRes.ok) {
+                            const bgBuffer = await bgRes.arrayBuffer();
+                            audioBuffers.current['BACKGROUND'] = await audioContext.current.decodeAudioData(bgBuffer);
+                        }
+                    } catch (e) {}
+                    updateProgress();
 
-                    for (const phrase of PHRASE_LIST) {
+                    for (const phraseDisplay of uniquePhrases) {
+                        const filename = cleanFilename(phraseDisplay) + ".mp3";
                         try {
-                            const res = await fetch(`${AUDIO_BASE_PATH}${phrase}.mp3`);
+                            const res = await fetch(`${AUDIO_BASE_PATH}${filename}`);
                             if (res.ok) {
                                 const buffer = await res.arrayBuffer();
-                                audioBuffers.current[phrase] = await audioContext.current.decodeAudioData(buffer);
-                            } else { updateProgress(); }
-                        } catch (e) { updateProgress(); }
+                                audioBuffers.current[phraseDisplay] = await audioContext.current.decodeAudioData(buffer);
+                                // Agregar a la lista de archivos disponibles para el menú
+                                setLoadedFilesList(prev => [...prev, phraseDisplay]);
+                            }
+                        } catch (e) {}
                         updateProgress();
                     }
                 };
                 loadAllAudios();
             }, []);
 
+            // 2. REPRODUCIR PREVIEW (Desde el menú de configuración)
+            const playPreview = (phraseName) => {
+                if (!audioContext.current) return;
+                
+                // Asegurar que el contexto esté activo (importante en móviles)
+                if (audioContext.current.state === 'suspended') {
+                    audioContext.current.resume();
+                }
+
+                // 1. Iniciar Ruido de Fondo
+                const bgSource = audioContext.current.createBufferSource();
+                bgSource.buffer = audioBuffers.current['BACKGROUND'];
+                const bgGain = audioContext.current.createGain();
+                bgGain.gain.value = 0.4;
+                bgSource.connect(bgGain);
+                bgGain.connect(audioContext.current.destination); // Directo a salida, sin analizador para no mover gráficos
+                bgSource.loop = true;
+                bgSource.start(0);
+
+                // 2. Iniciar Voz
+                const vSource = audioContext.current.createBufferSource();
+                vSource.buffer = audioBuffers.current[phraseName];
+                const vGain = audioContext.current.createGain();
+                vGain.gain.value = 1.0;
+                vSource.connect(vGain);
+                vGain.connect(audioContext.current.destination);
+                vSource.start(0);
+
+                // 3. Detener todo al terminar la voz
+                vSource.onended = () => {
+                    bgSource.stop();
+                };
+            };
+
+            // 3. ENCENDIDO / APAGADO
             const handleTogglePower = async () => {
                 if (isOn) {
                     setIsOn(false);
@@ -277,11 +336,14 @@
                 }
             };
 
-            const playSound = (bufferName, isBackground = false, volume = 1.0) => {
-                if (!audioContext.current || !audioBuffers.current[bufferName]) return;
+            const playSound = (keyName, isBackground = false, volume = 1.0) => {
+                if (!audioContext.current) return;
+                
+                let buffer = audioBuffers.current[keyName];
+                if (!buffer) return;
                 
                 const source = audioContext.current.createBufferSource();
-                source.buffer = audioBuffers.current[bufferName];
+                source.buffer = buffer;
                 const gainNode = audioContext.current.createGain();
                 gainNode.gain.value = volume;
                 
@@ -296,7 +358,7 @@
                     if (voiceSource.current) try { voiceSource.current.stop(); } catch(e){}
                     voiceSource.current = source;
                     isSpeaking.current = true;
-                    setCurrentAudio(bufferName);
+                    setCurrentAudio(keyName); 
                     source.start(0);
                     source.onended = () => {
                         isSpeaking.current = false;
@@ -368,32 +430,52 @@
 
             const processQuestion = (text) => {
                 if (!isOn) return;
+                
+                const cleanText = cleanFilename(text); 
                 let matchFound = false;
-                for (const [category, data] of Object.entries(INTELLIGENT_RESPONSES)) {
-                    if (data.triggers.some(trigger => text.includes(trigger))) {
-                        const response = data.responses[Math.floor(Math.random() * data.responses.length)];
-                        setStatusText(`DETECTADO: ${category.toUpperCase()}`);
-                        playSound(response, false, 1.0);
-                        matchFound = true;
-                        nextRandomTime.current = Date.now() + 4000;
-                        break;
+
+                // BUSQUEDA DIRECTA (100% Random Lógica)
+                const availablePhrases = PHRASE_LIST.filter(p => audioBuffers.current[p]);
+                
+                // Intento: Si el usuario dice "Miedo", buscar si existe el audio "Miedo"
+                const directMatch = availablePhrases.find(phrase => cleanText.includes(cleanFilename(phrase)));
+
+                if (directMatch) {
+                    setStatusText(`RESPUESTA DIRECTA`);
+                    playSound(directMatch, false, 1.0);
+                    matchFound = true;
+                    nextRandomTime.current = Date.now() + 4000;
+                } 
+                else {
+                    // Fallback Random (70% chance)
+                    if (Math.random() < 0.7) {
+                        setStatusText("BARRIDO...");
+                        if (availablePhrases.length > 0) {
+                            const randomPhrase = availablePhrases[Math.floor(Math.random() * availablePhrases.length)];
+                            playSound(randomPhrase, false, 1.0);
+                            nextRandomTime.current = Date.now() + 3000;
+                        }
+                    } else {
+                        setStatusText("SIN SEÑAL...");
                     }
                 }
-                if (!matchFound) setStatusText("ESCUCHANDO...");
             };
 
             useEffect(() => {
                 let interval;
                 if (isOn) {
-                    playSound('BACKGROUND', true, 0.4);
+                    playSound('BACKGROUND', true, 0.4); 
                     try { recognition.current.start(); } catch(e){}
                     interval = setInterval(() => {
                         const now = Date.now();
                         if (!isSpeaking.current && now > nextRandomTime.current) {
                             if (Math.random() > 0.6) {
-                                const randomPhrase = PHRASE_LIST[Math.floor(Math.random() * PHRASE_LIST.length)];
-                                playSound(randomPhrase, false, 0.9);
-                                nextRandomTime.current = now + (Math.random() * 4000 + 4000);
+                                const availablePhrases = PHRASE_LIST.filter(p => audioBuffers.current[p]);
+                                if (availablePhrases.length > 0) {
+                                    const randomPhrase = availablePhrases[Math.floor(Math.random() * availablePhrases.length)];
+                                    playSound(randomPhrase, false, 0.9);
+                                    nextRandomTime.current = now + (Math.random() * 4000 + 4000);
+                                }
                             }
                         }
                     }, 1000);
@@ -405,40 +487,73 @@
 
             // --- RENDERIZADO ---
             
-            // 1. PANTALLA DE CARGA CON LOGO
+            // 1. PANTALLA DE CARGA
             if (!isLoaded) {
                 return (
                     <div className="h-screen w-full bg-black flex flex-col items-center justify-center font-mono relative overflow-hidden">
-                        {/* Fondo animado sutil */}
                         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-red-900/20 via-black to-black animate-pulse"></div>
-                        
                         <div className="z-10 flex flex-col items-center">
-                            {/* LOGO CON EFECTO LATIDO */}
                             <img 
                                 src={LOGO_PATH} 
                                 alt="OBR Logo" 
                                 className="w-48 h-48 object-contain mb-8 logo-spectral"
                                 onError={(e) => { e.target.style.display = 'none'; }} 
                             />
-                            
-                            <div className="text-red-600 text-xs tracking-[0.3em] mb-4 animate-pulse">INICIANDO SISTEMA...</div>
-                            
+                            <div className="text-red-600 text-xs tracking-[0.3em] mb-4 animate-pulse">CARGANDO BANCO DE AUDIO...</div>
                             <div className="w-64 h-1 bg-gray-900 rounded-full overflow-hidden border border-red-900/30">
                                 <div className="h-full bg-red-600 transition-all duration-300" style={{ width: `${loadProgress}%` }}></div>
                             </div>
-                            <p className="text-[10px] text-gray-500 mt-2">{loadProgress}% CARGADO</p>
+                            <p className="text-[10px] text-gray-500 mt-2">{loadProgress}% COMPLETADO</p>
                         </div>
                     </div>
                 );
             }
 
-            // 2. APP PRINCIPAL
+            // 2. UI PRINCIPAL
             return (
                 <div className="h-screen w-full bg-black relative overflow-hidden">
                     <video id="camera-feed" ref={videoRef} autoPlay playsInline muted></video>
                     <div className="night-vision-overlay"></div>
                     <div className="tactical-grid"></div>
 
+                    {/* MODAL DE CONFIGURACIÓN (SETTINGS) */}
+                    {showSettings && (
+                        <div className="absolute inset-0 z-50 bg-black/95 flex flex-col p-6 font-mono text-red-500 animate-in fade-in duration-200">
+                            <div className="flex justify-between items-center mb-6 border-b border-red-900 pb-4">
+                                <h2 className="text-xl font-bold tracking-widest flex items-center gap-2">
+                                    <IconSettings className="w-6 h-6" /> DIAGNÓSTICO
+                                </h2>
+                                <button onClick={() => setShowSettings(false)} className="text-gray-400 hover:text-white">
+                                    <IconX className="w-8 h-8" />
+                                </button>
+                            </div>
+                            
+                            <div className="mb-4 text-xs text-gray-400">
+                                <p>ARCHIVOS EN MEMORIA: <span className="text-green-400 font-bold">{loadedFilesList.length}</span> / {PHRASE_LIST.length}</p>
+                                <p className="mt-1">PULSA <span className="text-white border border-gray-700 px-1 rounded mx-1">▶</span> PARA PREVISUALIZAR MEZCLA</p>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto custom-scrollbar border border-red-900/30 rounded bg-black/50 p-2">
+                                {loadedFilesList.length === 0 ? (
+                                    <div className="text-center mt-10 text-gray-600">NO SE HAN CARGADO AUDIOS</div>
+                                ) : (
+                                    loadedFilesList.map((phrase, idx) => (
+                                        <div key={idx} className="flex justify-between items-center p-3 border-b border-gray-900 hover:bg-red-900/10 transition-colors">
+                                            <span className="text-sm text-gray-300 truncate w-3/4">{phrase}</span>
+                                            <button 
+                                                onClick={() => playPreview(phrase)}
+                                                className="p-2 bg-green-900/20 text-green-500 rounded hover:bg-green-500 hover:text-black transition-all"
+                                            >
+                                                <IconPlay className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* CAPA DE INTERFAZ NORMAL */}
                     <div className="ui-layer px-4 py-6 justify-between">
                         <div className="flex justify-between items-start bg-black/60 p-2 rounded border-l-4 border-red-600 backdrop-blur-sm shadow-lg">
                             <div>
@@ -447,8 +562,11 @@
                                 </h1>
                                 <p className="text-[10px] text-red-400 mt-1 font-bold">RED EDITION v10</p>
                             </div>
-                            <div className="text-right">
-                                <div className="text-[9px] text-gray-400 tracking-widest">ESTADO</div>
+                            <div className="flex flex-col items-end gap-2">
+                                {/* BOTÓN DE SETTINGS */}
+                                <button onClick={() => setShowSettings(true)} className="text-gray-400 hover:text-white transition-colors">
+                                    <IconSettings className="w-6 h-6" />
+                                </button>
                                 <div className={`text-xs font-black tracking-wider ${isOn ? 'text-green-500' : 'text-red-600'}`}>
                                     {isOn ? 'EN LÍNEA' : 'OFFLINE'}
                                 </div>
@@ -458,8 +576,8 @@
                         <div className="flex-1 flex flex-col items-center justify-center">
                             {currentAudio ? (
                                 <div className="text-center w-full slam-in">
-                                    <h2 className="terror-text text-7xl font-black uppercase leading-none break-words px-2">
-                                        {currentAudio.replace(/_/g, " ")}
+                                    <h2 className="terror-text text-6xl font-black uppercase leading-none break-words px-2">
+                                        {currentAudio}
                                     </h2>
                                 </div>
                             ) : (
