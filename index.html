@@ -179,7 +179,6 @@
         ];
 
         // --- MAPEO INTELIGENTE DE ARCHIVOS EXISTENTES ---
-        // Este objeto conecta las preguntas con los archivos QUE REALMENTE EXISTEN en PHRASE_LIST
         const INTELLIGENT_MAPPING = {
             identity: {
                 triggers: ['llamas', 'nombre', 'quien', 'eres', 'identificate'],
@@ -314,7 +313,8 @@
 
                 if (isBackground) {
                     source.loop = true;
-                    gainNode.gain.value = 0.3; 
+                    // BOOST: Fondo subido de 0.3 a 0.8
+                    gainNode.gain.value = 0.8; 
                     backgroundGainNode.current = gainNode;
                     backgroundSource.current = source;
                     source.start(0);
@@ -324,13 +324,15 @@
                     isSpeaking.current = true;
                     setCurrentAudio(keyName); 
                     
-                    gainNode.gain.value = 3.0; 
+                    // BOOST: Voz subida de 3.0 a 8.0 (Protagonista absoluta)
+                    gainNode.gain.value = 8.0; 
 
                     if (backgroundGainNode.current) {
                         const now = audioContext.current.currentTime;
                         backgroundGainNode.current.gain.cancelScheduledValues(now);
                         backgroundGainNode.current.gain.setValueAtTime(backgroundGainNode.current.gain.value, now);
-                        backgroundGainNode.current.gain.linearRampToValueAtTime(0.1, now + 0.1); 
+                        // Ducking: Baja a 0.15 para dejar pasar la voz
+                        backgroundGainNode.current.gain.linearRampToValueAtTime(0.15, now + 0.1); 
                     }
 
                     source.start(0);
@@ -342,7 +344,8 @@
                             const now = audioContext.current.currentTime;
                             backgroundGainNode.current.gain.cancelScheduledValues(now);
                             backgroundGainNode.current.gain.setValueAtTime(backgroundGainNode.current.gain.value, now);
-                            backgroundGainNode.current.gain.linearRampToValueAtTime(0.3, now + 0.5);
+                            // Recuperación: Vuelve a 0.8
+                            backgroundGainNode.current.gain.linearRampToValueAtTime(0.8, now + 0.5);
                         }
                     };
                 }
@@ -364,7 +367,7 @@
                     bgSource = audioContext.current.createBufferSource();
                     bgSource.buffer = audioBuffers.current['BACKGROUND'];
                     const bgGain = audioContext.current.createGain();
-                    bgGain.gain.value = 0.1; 
+                    bgGain.gain.value = 0.3; // Preview Fondo
                     bgSource.connect(bgGain);
                     bgGain.connect(audioContext.current.destination);
                     bgSource.start(0);
@@ -373,7 +376,7 @@
                 const vSource = audioContext.current.createBufferSource();
                 vSource.buffer = audioBuffers.current[phraseName];
                 const vGain = audioContext.current.createGain();
-                vGain.gain.value = 3.0; 
+                vGain.gain.value = 8.0; // Preview Voz Boost 8.0
                 vSource.connect(vGain);
                 vGain.connect(audioContext.current.destination);
                 vSource.start(0);
@@ -456,7 +459,6 @@
                 }
 
                 // 2. SI NO ENTIENDE, IGNORAR (NO RESPONDER AL AZAR INMEDIATAMENTE)
-                // Esto hace que la herramienta se sienta más seria. Solo habla si entiende o por el barrido.
                 if (!matchFound) {
                     setStatusText("ESCUCHANDO...");
                 }
