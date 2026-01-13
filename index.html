@@ -178,6 +178,53 @@
             "Estoy observando", "No grites aquí", "Me dejaron solo"
         ];
 
+        // --- MAPEO INTELIGENTE DE ARCHIVOS EXISTENTES ---
+        // Este objeto conecta las preguntas con los archivos QUE REALMENTE EXISTEN en PHRASE_LIST
+        const INTELLIGENT_MAPPING = {
+            identity: {
+                triggers: ['llamas', 'nombre', 'quien', 'eres', 'identificate'],
+                pool: [
+                    'Juan', 'María', 'Pedro', 'Ana', 'Luis', 'Carmen', 'Carlos', 'Lucía', 
+                    'Miguel', 'Elena', 'Roberto', 'Sofía', 'David', 'Laura', 'José', 'Isabel',
+                    'Me llamo Juan', 'Soy María', 'Mi nombre es Pedro', 'No tengo nombre', 
+                    'Me dicen el sombra', 'Soy el guardián', 'Olvidé mi nombre', 'Nadie'
+                ]
+            },
+            location: {
+                triggers: ['donde', 'ubicacion', 'estas', 'aqui', 'ver', 'muestrate'],
+                pool: [
+                    'Aquí estoy', 'Estoy aquí', 'Detrás de ti', 'Aquí abajo', 'Aquí dentro', 
+                    'Cerca', 'Lejos', 'Bajo el suelo', 'Mira detrás', 'Estoy debajo', 
+                    'Estoy arriba', 'Me quedé', 'Aquí sigo'
+                ]
+            },
+            status: {
+                triggers: ['como', 'sientes', 'duele', 'paso', 'ocurrio', 'muerte', 'moriste', 'accidente'],
+                pool: [
+                    'Tengo frío', 'Me duele', 'Estoy muerto', 'Estoy roto', 'Estoy sangrando', 
+                    'Estoy quemándome', 'Tuve un accidente', 'Fue un error', 'Me dejaron', 
+                    'No respiro', 'Estoy perdido'
+                ]
+            },
+            count: {
+                triggers: ['cuantos', 'hay', 'numero', 'cantidad', 'acompañado', 'solo'],
+                pool: [
+                    'Uno', 'Dos', 'Tres', 'Cinco', 'Seis', 'Siete', 'Ocho', 'Nueve', 'Diez',
+                    'Somos dos', 'Somos tres', 'Somos cinco', 'Somos seis', 'Somos legión', 
+                    'Hay muchos aquí', 'Solo yo', 'Incontables', 'Cientos', 'Todos nosotros',
+                    'somos cuatro', 'somos muchos', 'Estoy solo'
+                ]
+            },
+            action: {
+                triggers: ['quieres', 'hacer', 'buscas', 'vete', 'largo', 'daño'],
+                pool: [
+                    'Ayuda', 'No te vayas', 'Escúchame', 'No mires', 'Ven', 'Mírame', 
+                    'No corras', 'No salgas', 'Quédate', 'Sígueme', 'No grites', 
+                    'No respires', 'No lo hagas', 'Escucha bien', 'No huyas', 'Vete'
+                ]
+            }
+        };
+
         const App = () => {
             const [isLoaded, setIsLoaded] = useState(false);
             const [loadError, setLoadError] = useState(false);
@@ -384,29 +431,38 @@
                 }
             }, []);
 
+            // --- LÓGICA CENTRAL DE INTELIGENCIA Y AZAR ---
             const processQuestion = (text) => {
                 if (!isOn) return;
                 const cleanText = cleanFilename(text);
-                const availablePhrases = PHRASE_LIST.filter(p => audioBuffers.current[p]);
-                
-                const directMatch = availablePhrases.find(phrase => cleanText.includes(cleanFilename(phrase)));
+                let matchFound = false;
 
-                if (directMatch) {
-                    setStatusText(`ECO DETECTADO`);
-                    playSound(directMatch, false);
-                    nextRandomTime.current = Date.now() + 8000;
-                } else {
-                    if (Math.random() < 0.8) {
-                        setStatusText("BARRIDO ACTIVO...");
-                        if (availablePhrases.length > 0) {
-                            const randomPhrase = availablePhrases[Math.floor(Math.random() * availablePhrases.length)];
-                            playSound(randomPhrase, false);
-                            nextRandomTime.current = Date.now() + 8000;
+                // 1. BÚSQUEDA INTELIGENTE POR CATEGORÍA
+                for (const [category, data] of Object.entries(INTELLIGENT_MAPPING)) {
+                    if (data.triggers.some(trigger => cleanText.includes(trigger))) {
+                        // Buscar respuestas válidas dentro de esta categoría
+                        const validResponses = data.pool.filter(phrase => audioBuffers.current[phrase]);
+                        
+                        if (validResponses.length > 0) {
+                            const response = validResponses[Math.floor(Math.random() * validResponses.length)];
+                            setStatusText(`RESPUESTA: ${category.toUpperCase()}`);
+                            playSound(response, false);
+                            matchFound = true;
+                            // PAUSA LARGA: Si responde, callarse 15 segundos para escuchar
+                            nextRandomTime.current = Date.now() + 15000;
                         }
+                        break;
                     }
+                }
+
+                // 2. SI NO ENTIENDE, IGNORAR (NO RESPONDER AL AZAR INMEDIATAMENTE)
+                // Esto hace que la herramienta se sienta más seria. Solo habla si entiende o por el barrido.
+                if (!matchFound) {
+                    setStatusText("ESCUCHANDO...");
                 }
             };
 
+            // --- BARRIDO DE RADIO (MODO AUTOMÁTICO) ---
             useEffect(() => {
                 let interval;
                 if (isOn) {
@@ -415,12 +471,14 @@
                     interval = setInterval(() => {
                         const now = Date.now();
                         if (!isSpeaking.current && now > nextRandomTime.current) {
-                            if (Math.random() > 0.6) {
+                            // PROBABILIDAD REDUCIDA: 20% cada segundo (Antes 40%)
+                            if (Math.random() > 0.8) {
                                 const availablePhrases = PHRASE_LIST.filter(p => audioBuffers.current[p]);
                                 if (availablePhrases.length > 0) {
                                     const randomPhrase = availablePhrases[Math.floor(Math.random() * availablePhrases.length)];
                                     playSound(randomPhrase, false);
-                                    nextRandomTime.current = now + (Math.random() * 4000 + 4000);
+                                    // TIEMPO ESPERA LARGO: 10 a 20 segundos entre frases
+                                    nextRandomTime.current = now + (Math.random() * 10000 + 10000);
                                 }
                             }
                         }
