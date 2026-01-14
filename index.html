@@ -32,7 +32,7 @@
             height: 100%;
             object-fit: cover;
             z-index: 0;
-            filter: grayscale(100%) contrast(1.2) brightness(0.6);
+            filter: grayscale(100%) contrast(1.2) brightness(1.2);
             transform: scaleX(1);
         }
 
@@ -314,7 +314,7 @@
                 if (isBackground) {
                     source.loop = true;
                     // BOOST: Fondo subido de 0.3 a 0.8
-                    gainNode.gain.value = 0.8; 
+                    gainNode.gain.value = 1.2; 
                     backgroundGainNode.current = gainNode;
                     backgroundSource.current = source;
                     source.start(0);
@@ -325,14 +325,14 @@
                     setCurrentAudio(keyName); 
                     
                     // BOOST: Voz subida de 3.0 a 8.0 (Protagonista absoluta)
-                    gainNode.gain.value = 8.0; 
+                    gainNode.gain.value = 1.5; 
 
                     if (backgroundGainNode.current) {
                         const now = audioContext.current.currentTime;
                         backgroundGainNode.current.gain.cancelScheduledValues(now);
                         backgroundGainNode.current.gain.setValueAtTime(backgroundGainNode.current.gain.value, now);
                         // Ducking: Baja a 0.15 para dejar pasar la voz
-                        backgroundGainNode.current.gain.linearRampToValueAtTime(0.15, now + 0.1); 
+                        backgroundGainNode.current.gain.linearRampToValueAtTime(0.30, now + 0.1); 
                     }
 
                     source.start(0);
@@ -345,7 +345,7 @@
                             backgroundGainNode.current.gain.cancelScheduledValues(now);
                             backgroundGainNode.current.gain.setValueAtTime(backgroundGainNode.current.gain.value, now);
                             // Recuperación: Vuelve a 0.8
-                            backgroundGainNode.current.gain.linearRampToValueAtTime(0.8, now + 0.5);
+                            backgroundGainNode.current.gain.linearRampToValueAtTime(1.2, now + 0.5);
                         }
                     };
                 }
