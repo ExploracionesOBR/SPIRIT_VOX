@@ -1,597 +1,92 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>OBR Vox - Red Edition</title>
-    <meta name="theme-color" content="#000000">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="manifest" href="./manifest.json">
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    
-    <style>
-        body { 
-            background-color: #000;
-            color: #ef4444;
-            font-family: 'Courier New', Courier, monospace;
-            overflow: hidden;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-        
-        #camera-feed {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            z-index: 0;
-            filter: grayscale(100%) contrast(1.2) brightness(1.2);
-            transform: scaleX(1);
-        }
-
-        .night-vision-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(10, 0, 0, 0.4);
-            pointer-events: none;
-            z-index: 1;
-            box-shadow: inset 0 0 150px rgba(0,0,0,1);
-        }
-
-        .ui-layer {
-            position: relative;
-            z-index: 10;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .tactical-grid {
-            background-image: 
-                linear-gradient(rgba(239, 68, 68, 0.05) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(239, 68, 68, 0.05) 1px, transparent 1px);
-            background-size: 50px 50px;
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            z-index: 2;
-        }
-
-        .terror-text {
-            color: #ffffff;
-            text-shadow: 4px 4px 0px #8b0000;
-            animation: terror-shake 0.3s infinite;
-            transform-origin: center;
-        }
-
-        @keyframes terror-shake {
-            0% { transform: translate(1px, 1px) rotate(0deg); text-shadow: 4px 4px 0px #8b0000; }
-            20% { transform: translate(-3px, 0px) rotate(-1deg); text-shadow: -4px 4px 0px #ff0000; opacity: 0.9;}
-            40% { transform: translate(1px, -1px) rotate(1deg); text-shadow: 4px -4px 0px #8b0000; }
-            60% { transform: translate(-3px, 1px) rotate(0deg); text-shadow: -4px -4px 0px #ff0000; opacity: 1;}
-            80% { transform: translate(-1px, -1px) rotate(1deg); text-shadow: 2px 2px 0px #8b0000; }
-            100% { transform: translate(1px, -2px) rotate(-1deg); text-shadow: 4px 4px 0px #ff0000; }
-        }
-
-        .slam-in {
-            animation: slam 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-        }
-        @keyframes slam {
-            0% { transform: scale(3); opacity: 0; }
-            50% { transform: scale(0.9); opacity: 1; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-
-        .logo-spectral {
-            animation: spectral-pulse 3s infinite ease-in-out;
-        }
-        @keyframes spectral-pulse {
-            0% { filter: drop-shadow(0 0 5px rgba(220, 38, 38, 0.2)) grayscale(100%); opacity: 0.7; transform: scale(1); }
-            50% { filter: drop-shadow(0 0 25px rgba(255, 0, 0, 0.8)) grayscale(0%); opacity: 1; transform: scale(1.05); }
-            100% { filter: drop-shadow(0 0 5px rgba(220, 38, 38, 0.2)) grayscale(100%); opacity: 0.7; transform: scale(1); }
-        }
-        
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #1a0505; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #7f1d1d; border-radius: 3px; }
-    </style>
+<meta charset="UTF-8">
+<title>Spirit Vox</title>
+<style>
+body {
+  background: black;
+  color: #0f0;
+  font-family: monospace;
+  text-align: center;
+}
+button, input {
+  background: black;
+  color: #0f0;
+  border: 1px solid #0f0;
+  padding: 10px;
+  margin: 5px;
+}
+</style>
 </head>
+
 <body>
-    <div id="root"></div>
 
-    <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+<h1>SPIRIT VOX</h1>
+<p>Interferencia activa</p>
 
-        const AUDIO_BASE_PATH = 'audios/'; 
-        const BACKGROUND_AUDIO = 'FONDO_1.mp3';
-        const LOGO_PATH = 'obr-logo.png';
+<button onclick="startVox()">INICIAR</button>
+<button onclick="stopVox()">DETENER</button>
 
-        const IconGhost = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M9 10h.01"/><path d="M15 10h.01"/><path d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"/></svg>;
-        const IconActivity = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>;
-        const IconPower = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>;
-        const IconSettings = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>;
-        const IconPlay = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polygon points="5 3 19 12 5 21 5 3"/></svg>;
-        const IconX = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
-        const IconAlert = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>;
+<br><br>
+<label>Intensidad</label>
+<input type="range" min="0.1" max="2" step="0.1" id="chaos" value="1">
 
-        const cleanFilename = (text) => {
-            return text.toLowerCase().trim()
-                .replace(/ /g, "_")
-                .replace(/ñ/g, "n")
-                .replace(/[á]/g, "a").replace(/[é]/g, "e").replace(/[í]/g, "i").replace(/[ó]/g, "o").replace(/[ú]/g, "u")
-                .replace(/[¿?¡!,.]/g, "");
-        };
+<script>
+let audioCtx;
+let noiseSource;
+let interval;
 
-        const PHRASE_LIST = [
-            "Juan", "María", "Pedro", "Ana", "Luis", "Carmen", "Carlos", "Lucía", 
-            "Miguel", "Elena", "Roberto", "Sofía", "David", "Laura", "José", "Isabel",
-            "Me llamo Juan", "Soy María", "Mi nombre es Pedro", "No tengo nombre", 
-            "Me dicen el sombra", "Soy el guardián", "Olvidé mi nombre", "Nadie",
-            "Uno", "Dos", "Tres", "Cinco", "Seis", "Siete", "Ocho", "Nueve", "Diez",
-            "Somos dos", "Somos tres", "Somos cinco", "Somos seis", "Somos legión", 
-            "Hay muchos aquí", "Solo yo", "Incontables", "Cientos", "Todos nosotros",
-            "somos cuatro", "estamos acá", "detrás de ti", "tuve un accidente", 
-            "quiero visitar mi familia", "no me puedo ir", "ayúdame a salir",
-            "estoy perdido", "quién eres", "busco la luz", "hace frío aquí",
-            "no te queremos", "déjanos en paz", "estoy enterrado", "bajo el suelo",
-            "mira detrás", "no respiro", "dónde estoy", "somos muchos",
-            "ven con nosotros", "te estoy viendo", "escucha mi voz", "no es tu lugar",
-            "estoy quemándome", "fue un error", "suéltame", "ya es tarde",
-            "rezar no sirve", "estamos esperando", "la puerta está abierta",
-            "atrás", "frío", "ayuda", "muerte", "luz", "oscuridad", "obregón", "tumba",
-            "vete", "aquí", "escucho", "miedo", "niño", "agua", "fuego", "piedra",
-            "corre", "espera", "nombre", "tiempo", "dolor", "soledad", "madre", "padre",
-            "espíritu", "señal", "ruido", "silencio", "cierra", "abre", "mira", "baja",
-            "sube", "cerca", "lejos", "tierra", "cielo", "infierno", "demonio", "ángel",
-            "rojo", "negro", "sangre", "llanto", "risas", "grito", "buscar", "encontrar",
-            "hola", "adiós", "estás", "nosotros", "ellos", "cuidado", "peligro", "sueño",
-            "Aquí estoy", "No te vayas", "Escúchame", "Estoy aquí", "No mires", 
-            "No puedo", "Ven", "Mírame", "No corras", "Estoy solo", "No salgas", 
-            "Tengo frío", "Nos escuchan", "No es seguro", "Quédate", "Estoy atrapado", 
-            "No me ves", "Sígueme", "No grites", "Estoy muerto", "No respires", 
-            "Estoy contigo", "No lo hagas", "Ya viene", "Estoy cansado", "Escucha bien", 
-            "No huyas", "Me duele", "Aquí no", "Está oscuro", "No hay salida", 
-            "No me toques", "Me llamaron", "Está cerca", "No te acerques", 
-            "No duermas", "Me ves", "No mires atrás", "Estoy debajo", "No hables", 
-            "Me oyes", "Está aquí", "No cierres", "Estoy arriba", "No confíes", 
-            "Me quedé", "Aquí dentro", "No lo sabes", "Estoy cayendo", "No saldrá", 
-            "Me dejaron", "Está vivo", "No despiertes", "Estoy roto", "No entiendes", 
-            "Me llamas", "Aquí sigo", "No lo mires", "Estoy sangrando", "No es real", 
-            "Me perdí", "Está mal", "No escuches", "Estoy solo aquí", "No te muevas", 
-            "Me buscan", "Aquí abajo", "No puedo salir", "Estoy mirando", "No lo abras", 
-            "Me oyen", "Está abierto", "No me sigas", "Estoy esperando aquí", 
-            "No te escondas", "Me olvidaron", "Aquí termina", "No regreses", 
-            "Estoy despierto", "No resistas", "Me escuchas", "Está oscuro aquí", 
-            "No confíes en ellos", "Estoy cerca de ti", "No te vayas solo", 
-            "Me duele mucho", "Aquí nadie", "No soy humano", "Estoy atrapado aquí", 
-            "No lo intentes", "Me quedé atrás", "Está frío", "No puedo ver", 
-            "Estoy observando", "No grites aquí", "Me dejaron solo"
-        ];
+const words = [
+  "hola", "ayuda", "ven", "aquí", "muerte",
+  "escucha", "no", "sí", "estoy", "frío",
+  "oscuro", "tiempo", "sal", "puerta", "detrás"
+];
 
-        // --- MAPEO INTELIGENTE DE ARCHIVOS EXISTENTES ---
-        const INTELLIGENT_MAPPING = {
-            identity: {
-                triggers: ['llamas', 'nombre', 'quien', 'eres', 'identificate'],
-                pool: [
-                    'Juan', 'María', 'Pedro', 'Ana', 'Luis', 'Carmen', 'Carlos', 'Lucía', 
-                    'Miguel', 'Elena', 'Roberto', 'Sofía', 'David', 'Laura', 'José', 'Isabel',
-                    'Me llamo Juan', 'Soy María', 'Mi nombre es Pedro', 'No tengo nombre', 
-                    'Me dicen el sombra', 'Soy el guardián', 'Olvidé mi nombre', 'Nadie'
-                ]
-            },
-            location: {
-                triggers: ['donde', 'ubicacion', 'estas', 'aqui', 'ver', 'muestrate'],
-                pool: [
-                    'Aquí estoy', 'Estoy aquí', 'Detrás de ti', 'Aquí abajo', 'Aquí dentro', 
-                    'Cerca', 'Lejos', 'Bajo el suelo', 'Mira detrás', 'Estoy debajo', 
-                    'Estoy arriba', 'Me quedé', 'Aquí sigo'
-                ]
-            },
-            status: {
-                triggers: ['como', 'sientes', 'duele', 'paso', 'ocurrio', 'muerte', 'moriste', 'accidente'],
-                pool: [
-                    'Tengo frío', 'Me duele', 'Estoy muerto', 'Estoy roto', 'Estoy sangrando', 
-                    'Estoy quemándome', 'Tuve un accidente', 'Fue un error', 'Me dejaron', 
-                    'No respiro', 'Estoy perdido'
-                ]
-            },
-            count: {
-                triggers: ['cuantos', 'hay', 'numero', 'cantidad', 'acompañado', 'solo'],
-                pool: [
-                    'Uno', 'Dos', 'Tres', 'Cinco', 'Seis', 'Siete', 'Ocho', 'Nueve', 'Diez',
-                    'Somos dos', 'Somos tres', 'Somos cinco', 'Somos seis', 'Somos legión', 
-                    'Hay muchos aquí', 'Solo yo', 'Incontables', 'Cientos', 'Todos nosotros',
-                    'somos cuatro', 'somos muchos', 'Estoy solo'
-                ]
-            },
-            action: {
-                triggers: ['quieres', 'hacer', 'buscas', 'vete', 'largo', 'daño'],
-                pool: [
-                    'Ayuda', 'No te vayas', 'Escúchame', 'No mires', 'Ven', 'Mírame', 
-                    'No corras', 'No salgas', 'Quédate', 'Sígueme', 'No grites', 
-                    'No respires', 'No lo hagas', 'Escucha bien', 'No huyas', 'Vete'
-                ]
-            }
-        };
+function startVox() {
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-        const App = () => {
-            const [isLoaded, setIsLoaded] = useState(false);
-            const [loadError, setLoadError] = useState(false);
-            const [loadProgress, setLoadProgress] = useState(0);
-            const [isOn, setIsOn] = useState(false);
-            const [isStarting, setIsStarting] = useState(false);
-            const [statusText, setStatusText] = useState("EN ESPERA");
-            const [detectedWord, setDetectedWord] = useState("");
-            const [currentAudio, setCurrentAudio] = useState(null);
-            
-            const [showSettings, setShowSettings] = useState(false);
-            const [loadedFilesList, setLoadedFilesList] = useState([]);
-            
-            const videoRef = useRef(null);
-            const audioBuffers = useRef({});
-            const audioContext = useRef(null);
-            const analyser = useRef(null);
-            const backgroundSource = useRef(null);
-            const backgroundGainNode = useRef(null); 
-            const voiceSource = useRef(null);
-            const recognition = useRef(null);
-            const nextRandomTime = useRef(0);
-            const isSpeaking = useRef(false);
-            const canvasRef = useRef(null);
-            const animationRef = useRef(null);
+  // Ruido blanco (interferencia)
+  const bufferSize = 2 * audioCtx.sampleRate;
+  const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+  const output = noiseBuffer.getChannelData(0);
 
-            useEffect(() => {
-                const loadAllAudios = async () => {
-                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-                    audioContext.current = new AudioCtx();
-                    analyser.current = audioContext.current.createAnalyser();
-                    analyser.current.fftSize = 256; 
-                    analyser.current.connect(audioContext.current.destination);
+  for (let i = 0; i < bufferSize; i++) {
+    output[i] = Math.random() * 2 - 1;
+  }
 
-                    const uniquePhrases = [...new Set(PHRASE_LIST)];
-                    const total = uniquePhrases.length + 1;
-                    let loaded = 0;
-                    let loadedSuccess = 0;
+  noiseSource = audioCtx.createBufferSource();
+  noiseSource.buffer = noiseBuffer;
+  noiseSource.loop = true;
 
-                    const updateProgress = () => {
-                        loaded++;
-                        setLoadProgress(Math.round((loaded / total) * 100));
-                        if (loaded === total) {
-                            if (loadedSuccess === 0) setLoadError(true);
-                            else setTimeout(() => setIsLoaded(true), 1500); 
-                        }
-                    };
+  const noiseGain = audioCtx.createGain();
+  noiseGain.gain.value = 0.2;
 
-                    try {
-                        const bgRes = await fetch(BACKGROUND_AUDIO);
-                        if (bgRes.ok) {
-                            const bgBuffer = await bgRes.arrayBuffer();
-                            audioBuffers.current['BACKGROUND'] = await audioContext.current.decodeAudioData(bgBuffer);
-                            loadedSuccess++;
-                        }
-                    } catch (e) {}
-                    updateProgress();
+  noiseSource.connect(noiseGain).connect(audioCtx.destination);
+  noiseSource.start();
 
-                    for (const phraseDisplay of uniquePhrases) {
-                        const filename = cleanFilename(phraseDisplay) + ".mp3";
-                        try {
-                            const res = await fetch(`${AUDIO_BASE_PATH}${filename}`);
-                            if (res.ok) {
-                                const buffer = await res.arrayBuffer();
-                                audioBuffers.current[phraseDisplay] = await audioContext.current.decodeAudioData(buffer);
-                                setLoadedFilesList(prev => [...prev, phraseDisplay]);
-                                loadedSuccess++;
-                            }
-                        } catch (e) {}
-                        updateProgress();
-                    }
-                };
-                loadAllAudios();
-            }, []);
+  // Voces aleatorias
+  interval = setInterval(() => {
+    if (Math.random() > 0.6) speakRandom();
+  }, 1000 / document.getElementById("chaos").value);
+}
 
-            const playSound = (keyName, isBackground = false) => {
-                if (!audioContext.current) return;
-                let buffer = audioBuffers.current[keyName];
-                if (!buffer) return;
-                
-                const source = audioContext.current.createBufferSource();
-                source.buffer = buffer;
-                const gainNode = audioContext.current.createGain();
-                
-                source.connect(gainNode);
-                gainNode.connect(analyser.current);
+function speakRandom() {
+  const utter = new SpeechSynthesisUtterance(
+    words[Math.floor(Math.random() * words.length)]
+  );
+  utter.pitch = Math.random() * 2;
+  utter.rate = 0.5 + Math.random();
+  utter.volume = 0.2;
+  speechSynthesis.speak(utter);
+}
 
-                if (isBackground) {
-                    source.loop = true;
-                    // BOOST: Fondo subido de 0.3 a 0.8
-                    gainNode.gain.value = 1.2; 
-                    backgroundGainNode.current = gainNode;
-                    backgroundSource.current = source;
-                    source.start(0);
-                } else {
-                    if (voiceSource.current) try { voiceSource.current.stop(); } catch(e){}
-                    voiceSource.current = source;
-                    isSpeaking.current = true;
-                    setCurrentAudio(keyName); 
-                    
-                    // BOOST: Voz subida de 3.0 a 8.0 (Protagonista absoluta)
-                    gainNode.gain.value = 1.5; 
+function stopVox() {
+  clearInterval(interval);
+  if (noiseSource) noiseSource.stop();
+  speechSynthesis.cancel();
+}
+</script>
 
-                    if (backgroundGainNode.current) {
-                        const now = audioContext.current.currentTime;
-                        backgroundGainNode.current.gain.cancelScheduledValues(now);
-                        backgroundGainNode.current.gain.setValueAtTime(backgroundGainNode.current.gain.value, now);
-                        // Ducking: Baja a 0.15 para dejar pasar la voz
-                        backgroundGainNode.current.gain.linearRampToValueAtTime(0.30, now + 0.1); 
-                    }
-
-                    source.start(0);
-                    
-                    source.onended = () => {
-                        isSpeaking.current = false;
-                        setCurrentAudio(null);
-                        if (backgroundGainNode.current) {
-                            const now = audioContext.current.currentTime;
-                            backgroundGainNode.current.gain.cancelScheduledValues(now);
-                            backgroundGainNode.current.gain.setValueAtTime(backgroundGainNode.current.gain.value, now);
-                            // Recuperación: Vuelve a 0.8
-                            backgroundGainNode.current.gain.linearRampToValueAtTime(1.2, now + 0.5);
-                        }
-                    };
-                }
-            };
-
-            const stopAll = () => {
-                if (backgroundSource.current) backgroundSource.current.stop();
-                if (voiceSource.current) voiceSource.current.stop();
-                isSpeaking.current = false;
-                setCurrentAudio(null);
-            };
-
-            const playPreview = (phraseName) => {
-                if (!audioContext.current) return;
-                if (audioContext.current.state === 'suspended') audioContext.current.resume();
-                
-                let bgSource = null;
-                if (audioBuffers.current['BACKGROUND']) {
-                    bgSource = audioContext.current.createBufferSource();
-                    bgSource.buffer = audioBuffers.current['BACKGROUND'];
-                    const bgGain = audioContext.current.createGain();
-                    bgGain.gain.value = 0.3; // Preview Fondo
-                    bgSource.connect(bgGain);
-                    bgGain.connect(audioContext.current.destination);
-                    bgSource.start(0);
-                }
-
-                const vSource = audioContext.current.createBufferSource();
-                vSource.buffer = audioBuffers.current[phraseName];
-                const vGain = audioContext.current.createGain();
-                vGain.gain.value = 8.0; // Preview Voz Boost 8.0
-                vSource.connect(vGain);
-                vGain.connect(audioContext.current.destination);
-                vSource.start(0);
-
-                vSource.onended = () => {
-                    if(bgSource) bgSource.stop();
-                };
-            };
-
-            const drawWaveform = () => {
-                if (!isOn || !analyser.current || !canvasRef.current) return;
-                const canvas = canvasRef.current;
-                const ctx = canvas.getContext('2d');
-                const bufferLength = analyser.current.frequencyBinCount;
-                const dataArray = new Uint8Array(bufferLength);
-                analyser.current.getByteTimeDomainData(dataArray);
-
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.lineWidth = 3;
-                ctx.strokeStyle = '#ef4444';
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = '#ef4444';
-                ctx.beginPath();
-                const sliceWidth = canvas.width * 1.0 / bufferLength;
-                let x = 0;
-                for(let i = 0; i < bufferLength; i++) {
-                    const v = dataArray[i] / 128.0;
-                    const y = v * canvas.height / 2;
-                    if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-                    x += sliceWidth;
-                }
-                ctx.lineTo(canvas.width, canvas.height/2);
-                ctx.stroke();
-                animationRef.current = requestAnimationFrame(drawWaveform);
-            };
-
-            useEffect(() => {
-                if (isOn) drawWaveform();
-                else cancelAnimationFrame(animationRef.current);
-                return () => cancelAnimationFrame(animationRef.current);
-            }, [isOn]);
-
-            useEffect(() => {
-                if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-                    recognition.current = new SpeechRecognition();
-                    recognition.current.continuous = true;
-                    recognition.current.lang = 'es-MX';
-                    recognition.current.interimResults = false;
-                    recognition.current.onresult = (event) => {
-                        const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase();
-                        setDetectedWord(transcript);
-                        processQuestion(transcript);
-                    };
-                }
-            }, []);
-
-            // --- LÓGICA CENTRAL DE INTELIGENCIA Y AZAR ---
-            const processQuestion = (text) => {
-                if (!isOn) return;
-                const cleanText = cleanFilename(text);
-                let matchFound = false;
-
-                // 1. BÚSQUEDA INTELIGENTE POR CATEGORÍA
-                for (const [category, data] of Object.entries(INTELLIGENT_MAPPING)) {
-                    if (data.triggers.some(trigger => cleanText.includes(trigger))) {
-                        // Buscar respuestas válidas dentro de esta categoría
-                        const validResponses = data.pool.filter(phrase => audioBuffers.current[phrase]);
-                        
-                        if (validResponses.length > 0) {
-                            const response = validResponses[Math.floor(Math.random() * validResponses.length)];
-                            setStatusText(`RESPUESTA: ${category.toUpperCase()}`);
-                            playSound(response, false);
-                            matchFound = true;
-                            // PAUSA LARGA: Si responde, callarse 15 segundos para escuchar
-                            nextRandomTime.current = Date.now() + 15000;
-                        }
-                        break;
-                    }
-                }
-
-                // 2. SI NO ENTIENDE, IGNORAR (NO RESPONDER AL AZAR INMEDIATAMENTE)
-                if (!matchFound) {
-                    setStatusText("ESCUCHANDO...");
-                }
-            };
-
-            // --- BARRIDO DE RADIO (MODO AUTOMÁTICO) ---
-            useEffect(() => {
-                let interval;
-                if (isOn) {
-                    playSound('BACKGROUND', true);
-                    try { recognition.current.start(); } catch(e){}
-                    interval = setInterval(() => {
-                        const now = Date.now();
-                        if (!isSpeaking.current && now > nextRandomTime.current) {
-                            // PROBABILIDAD REDUCIDA: 20% cada segundo (Antes 40%)
-                            if (Math.random() > 0.8) {
-                                const availablePhrases = PHRASE_LIST.filter(p => audioBuffers.current[p]);
-                                if (availablePhrases.length > 0) {
-                                    const randomPhrase = availablePhrases[Math.floor(Math.random() * availablePhrases.length)];
-                                    playSound(randomPhrase, false);
-                                    // TIEMPO ESPERA LARGO: 10 a 20 segundos entre frases
-                                    nextRandomTime.current = now + (Math.random() * 10000 + 10000);
-                                }
-                            }
-                        }
-                    }, 1000);
-                } else {
-                    try { recognition.current.stop(); } catch(e){}
-                }
-                return () => clearInterval(interval);
-            }, [isOn]);
-
-            const handleTogglePower = async () => {
-                if (isOn) {
-                    setIsOn(false);
-                    stopAll();
-                    setStatusText("SISTEMA DETENIDO");
-                    if (videoRef.current && videoRef.current.srcObject) {
-                        videoRef.current.srcObject.getTracks().forEach(track => track.stop());
-                        videoRef.current.srcObject = null;
-                    }
-                } else {
-                    setIsStarting(true);
-                    setStatusText("INICIANDO...");
-                    try {
-                        if (audioContext.current && audioContext.current.state === 'suspended') {
-                            await audioContext.current.resume();
-                        }
-                        const stream = await navigator.mediaDevices.getUserMedia({ 
-                            video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
-                            audio: true 
-                        });
-                        if (videoRef.current) videoRef.current.srcObject = stream;
-                        const micSource = audioContext.current.createMediaStreamSource(stream);
-                        micSource.connect(analyser.current);
-                        setIsOn(true);
-                        setStatusText("ESCANEANDO...");
-                    } catch (err) {
-                        setStatusText("ERROR CAMARA");
-                        setIsOn(true); 
-                    } finally {
-                        setIsStarting(false);
-                    }
-                }
-            };
-
-            if (loadError) return <div className="h-screen bg-black text-red-500 flex items-center justify-center p-10 text-center font-mono border border-red-900"><p>ERROR FATAL: NO SE ENCONTRARON AUDIOS EN /audios/</p></div>;
-            
-            if (!isLoaded) return (
-                <div className="h-screen w-full bg-black flex flex-col items-center justify-center font-mono relative overflow-hidden">
-                    <div className="z-10 flex flex-col items-center">
-                        <img src={LOGO_PATH} alt="Logo" className="w-48 h-48 object-contain mb-8 logo-spectral" onError={(e)=>{e.target.style.display='none'}}/>
-                        <div className="text-red-600 text-xs tracking-[0.3em] mb-4 animate-pulse">CARGANDO RECURSOS...</div>
-                        <div className="w-64 h-1 bg-gray-900 rounded-full"><div className="h-full bg-red-600 transition-all duration-300" style={{ width: `${loadProgress}%` }}></div></div>
-                    </div>
-                </div>
-            );
-
-            return (
-                <div className="h-screen w-full bg-black relative overflow-hidden">
-                    <video id="camera-feed" ref={videoRef} autoPlay playsInline muted></video>
-                    <div className="night-vision-overlay"></div>
-                    <div className="tactical-grid"></div>
-
-                    {showSettings && (
-                        <div className="absolute inset-0 z-50 bg-black/95 flex flex-col p-6 font-mono text-red-500">
-                            <div className="flex justify-between items-center mb-6 border-b border-red-900 pb-4">
-                                <h2 className="text-xl font-bold">ARCHIVOS</h2>
-                                <button onClick={() => setShowSettings(false)}><IconX className="w-8 h-8" /></button>
-                            </div>
-                            <div className="flex-1 overflow-y-auto custom-scrollbar border border-red-900/30 rounded bg-black/50 p-2">
-                                {loadedFilesList.map((phrase, idx) => (
-                                    <div key={idx} className="flex justify-between p-3 border-b border-gray-900">
-                                        <span className="text-sm text-gray-300">{phrase}</span>
-                                        <button onClick={() => playPreview(phrase)}><IconPlay className="w-4 h-4 text-green-500" /></button>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    <div className="ui-layer px-4 py-6 justify-between">
-                        <div className="flex justify-between items-start bg-black/60 p-2 rounded border-l-4 border-red-600 backdrop-blur-sm shadow-lg">
-                            <div><h1 className="text-xl font-bold text-white flex gap-2"><IconGhost className="w-5 h-5 text-red-500" /> OBR-VOX</h1></div>
-                            <div className="flex flex-col items-end gap-2">
-                                <button onClick={() => setShowSettings(true)} className="text-gray-400 hover:text-white"><IconSettings className="w-6 h-6" /></button>
-                                <div className={`text-xs font-black tracking-wider ${isOn ? 'text-green-500' : 'text-red-600'}`}>{isOn ? 'REC' : 'OFF'}</div>
-                            </div>
-                        </div>
-
-                        <div className="flex-1 flex flex-col items-center justify-center relative">
-                            <div className="absolute bottom-0 w-full text-center pb-4">
-                                {currentAudio ? (
-                                    <h2 className="terror-text text-5xl font-black uppercase leading-none break-words px-2 slam-in">{currentAudio}</h2>
-                                ) : (isOn && <p className="text-[10px] text-red-500 tracking-[0.5em] animate-pulse">...</p>)}
-                            </div>
-                        </div>
-
-                        <div className="flex flex-col gap-4">
-                            <div className="h-20 w-full bg-black/90 border-x-2 border-red-600 relative overflow-hidden">
-                                <canvas ref={canvasRef} width="400" height="100" className="w-full h-full"></canvas>
-                            </div>
-                            <button onClick={handleTogglePower} disabled={isStarting} className={`w-full h-20 clip-path-polygon font-black tracking-[0.2em] text-xl transition-all active:scale-[0.98] flex items-center justify-center gap-3 border-2 shadow-2xl ${isOn ? 'bg-red-800 text-white border-red-500' : 'bg-gray-900 text-gray-500 border-gray-700'}`} style={{ clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)' }}>
-                                {isStarting ? <IconActivity className="w-8 h-8 animate-spin" /> : <><IconPower className="w-6 h-6" /> {isOn ? 'APAGAR' : 'ENCENDER'}</>}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            );
-        };
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
 </body>
 </html>
